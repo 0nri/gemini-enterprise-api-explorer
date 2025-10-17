@@ -57,4 +57,3 @@ build/
 *.tmp
 *.temp
 .cache/
-__init__.py

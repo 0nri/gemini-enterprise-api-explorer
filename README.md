@@ -38,7 +38,7 @@ gcloud auth application-default print-access-token
 ## 🚀 Quick Start
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/0nri/gemini-enterprise-api-explorer.git
 cd gemini-enterprise-api-explorer
 chmod +x setup.sh
 ./setup.sh

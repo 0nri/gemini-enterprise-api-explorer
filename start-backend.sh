@@ -14,11 +14,9 @@ BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Activate virtual environment
+# Activate virtual environment (from project root)
 echo -e "${BLUE}Activating Python virtual environment...${NC}"
-cd backend
-source .venv/bin/activate
-cd ..
+source backend/.venv/bin/activate
 
 echo -e "${GREEN}✓ Virtual environment activated${NC}"
 echo ""
@@ -37,5 +35,5 @@ echo "  Press Ctrl+C to stop the server"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-# Run the server (this will show all logs)
+# Run the server from project root (this will show all logs)
 python -m backend.api.main

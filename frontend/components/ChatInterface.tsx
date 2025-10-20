@@ -110,8 +110,13 @@ export default function ChatInterface({ config }: ChatInterfaceProps) {
         let answerText = '';
         if (data.response?.chunks) {
           for (const chunk of data.response.chunks) {
+            // Check if answer was skipped
+            if (chunk.answer?.state === 'SKIPPED') {
+              answerText = 'The assistant skipped this query. Try asking a more specific question.';
+              break; // No need to check other chunks
+            }
             // Extract text from groundedContent.content.text
-            if (chunk.answer?.replies) {
+            else if (chunk.answer?.replies) {
               for (const reply of chunk.answer.replies) {
                 if (reply.groundedContent?.content?.text) {
                   answerText += reply.groundedContent.content.text;

@@ -44,8 +44,15 @@ export default function ConfigSidebar({ config, onConfigChange }: ConfigSidebarP
 
   const handleApply = () => {
     if (validateConfig()) {
-      onConfigChange(localConfig);
-      localStorage.setItem('agentspace-config', JSON.stringify(localConfig));
+      // Trim all string values to remove whitespace/tabs
+      const trimmedConfig = {
+        ...localConfig,
+        projectNumber: localConfig.projectNumber.trim(),
+        engineId: localConfig.engineId.trim(),
+        assistantId: localConfig.assistantId.trim(),
+      };
+      onConfigChange(trimmedConfig);
+      localStorage.setItem('agentspace-config', JSON.stringify(trimmedConfig));
     }
   };
 

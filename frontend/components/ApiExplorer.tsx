@@ -32,6 +32,13 @@ export default function ApiExplorer({ config }: ApiExplorerProps) {
   const { projectNumber, location, engineId, assistantId } = config;
   const isConfigured = projectNumber && engineId;
 
+  // Generate dynamic API endpoint display based on location
+  const getApiEndpoint = () => {
+    return location === 'global' 
+      ? 'discoveryengine.googleapis.com' 
+      : `${location}-discoveryengine.googleapis.com`;
+  };
+
   const fetchEngineDetails = async () => {
     if (!isConfigured) return;
     setLoading('enginedetails');
@@ -78,6 +85,7 @@ export default function ApiExplorer({ config }: ApiExplorerProps) {
     try {
       const params = new URLSearchParams({
         project_number: projectNumber,
+        location: location,
       });
       const response = await fetch(`http://localhost:8000/api-explorer/list-assistants/${engineId}?${params}`);
       const data = await response.json();
@@ -97,6 +105,7 @@ export default function ApiExplorer({ config }: ApiExplorerProps) {
     try {
       const params = new URLSearchParams({
         project_number: projectNumber,
+        location: location,
       });
       const response = await fetch(`http://localhost:8000/api-explorer/list-agents/${engineId}?${params}`);
       const data = await response.json();
@@ -116,6 +125,7 @@ export default function ApiExplorer({ config }: ApiExplorerProps) {
     try {
       const params = new URLSearchParams({
         project_number: projectNumber,
+        location: location,
       });
       const response = await fetch(`http://localhost:8000/api-explorer/get-agent/${engineId}/${agentId}?${params}`);
       const data = await response.json();
@@ -138,6 +148,7 @@ export default function ApiExplorer({ config }: ApiExplorerProps) {
         assistant_id: assistantId,
         query: query,
         project_number: projectNumber,
+        location: location,
         agent_name: agentId,
         session_id: sessionId,
       });
@@ -165,6 +176,7 @@ export default function ApiExplorer({ config }: ApiExplorerProps) {
         assistant_id: assistantId,
         query: searchQuery,
         project_number: projectNumber,
+        location: location,
       });
       const response = await fetch(
         `http://localhost:8000/api-explorer/web-grounding-search?${params.toString()}`,
@@ -315,7 +327,7 @@ export default function ApiExplorer({ config }: ApiExplorerProps) {
           <span className="ml-3 text-sm font-normal px-2 py-1 bg-purple-100 text-purple-800 rounded">REST API v1alpha</span>
         </h2>
         <div className="mb-3 px-3 py-2 bg-gray-50 rounded border border-gray-200">
-          <code className="text-xs text-gray-700">GET us-discoveryengine.googleapis.com/v1alpha/.../engines/{'{engine}'}/assistants</code>
+          <code className="text-xs text-gray-700">GET {getApiEndpoint()}/v1alpha/.../engines/{'{engine}'}/assistants</code>
         </div>
         <p className="text-gray-600 mb-4">
           List all assistants within an engine using v1alpha API. Assistants are containers that hold agents.
@@ -364,7 +376,7 @@ export default function ApiExplorer({ config }: ApiExplorerProps) {
           <span className="ml-3 text-sm font-normal px-2 py-1 bg-purple-100 text-purple-800 rounded">REST API v1alpha</span>
         </h2>
         <div className="mb-3 px-3 py-2 bg-gray-50 rounded border border-gray-200">
-          <code className="text-xs text-gray-700">GET us-discoveryengine.googleapis.com/v1alpha/.../assistants/{'{assistant}'}/agents</code>
+          <code className="text-xs text-gray-700">GET {getApiEndpoint()}/v1alpha/.../assistants/{'{assistant}'}/agents</code>
         </div>
         <p className="text-gray-600 mb-4">
           List all agents within the default assistant. Agents are individual tools/capabilities like "HKFinBot", "Deep Research", etc.
@@ -413,7 +425,7 @@ export default function ApiExplorer({ config }: ApiExplorerProps) {
           <span className="ml-3 text-sm font-normal px-2 py-1 bg-purple-100 text-purple-800 rounded">REST API v1alpha</span>
         </h2>
         <div className="mb-3 px-3 py-2 bg-gray-50 rounded border border-gray-200">
-          <code className="text-xs text-gray-700">GET us-discoveryengine.googleapis.com/v1alpha/.../agents/{'{agent}'}</code>
+          <code className="text-xs text-gray-700">GET {getApiEndpoint()}/v1alpha/.../agents/{'{agent}'}</code>
         </div>
         <p className="text-gray-600 mb-4">
           Get detailed information about a specific agent (e.g., "default_idea_generation", "deep_research"). Use agent names from the List Agents response.
@@ -469,7 +481,7 @@ export default function ApiExplorer({ config }: ApiExplorerProps) {
           <span className="ml-3 text-sm font-normal px-2 py-1 bg-purple-100 text-purple-800 rounded">REST API v1alpha</span>
         </h2>
         <div className="mb-3 px-3 py-2 bg-gray-50 rounded border border-gray-200">
-          <code className="text-xs text-gray-700">POST us-discoveryengine.googleapis.com/v1alpha/.../assistants/{'{assistant}'}:streamAssist</code>
+          <code className="text-xs text-gray-700">POST {getApiEndpoint()}/v1alpha/.../assistants/{'{assistant}'}:streamAssist</code>
         </div>
         <p className="text-gray-600 mb-4">
           Query an assistant/agent using the streamAssist API (v1alpha with us location). Optionally specify an agent name to route to a specific agent. The response includes session info for conversation continuity.
@@ -552,7 +564,7 @@ export default function ApiExplorer({ config }: ApiExplorerProps) {
           <span className="ml-3 text-sm font-normal px-2 py-1 bg-purple-100 text-purple-800 rounded">REST API v1alpha</span>
         </h2>
         <div className="mb-3 px-3 py-2 bg-gray-50 rounded border border-gray-200">
-          <code className="text-xs text-gray-700">POST us-discoveryengine.googleapis.com/v1alpha/.../assistants/{'{assistant}'}:streamAssist (webGroundingSpec)</code>
+          <code className="text-xs text-gray-700">POST {getApiEndpoint()}/v1alpha/.../assistants/{'{assistant}'}:streamAssist (webGroundingSpec)</code>
         </div>
         <p className="text-gray-600 mb-4">
           Search the web using streamAssist with web grounding enabled. This uses Google Search to find and synthesize information from the web.

@@ -88,6 +88,7 @@ async def web_grounding_search(
     assistant_id: str,
     query: str,
     project_number: str = Query(..., description="Google Cloud project number"),
+    location: str = Query("us", description="Engine location (us, eu, global)"),
 ):
     """
     Enterprise Search using streamAssist with web grounding (v1alpha).
@@ -97,6 +98,7 @@ async def web_grounding_search(
         assistant_id: The ID of the assistant (e.g., "default_assistant")
         query: The search query text
         project_number: Google Cloud project number
+        location: Engine location (us, eu, global)
 
     Returns:
         Dictionary with search results from web grounding
@@ -107,19 +109,28 @@ async def web_grounding_search(
         if not credentials.valid:
             credentials.refresh(AuthRequest())
 
+        # Determine API endpoint based on location
+        # Global uses discoveryengine.googleapis.com (no prefix)
+        # Regional (us, eu) uses {location}-discoveryengine.googleapis.com
+        api_endpoint = (
+            "discoveryengine.googleapis.com"
+            if location == "global"
+            else f"{location}-discoveryengine.googleapis.com"
+        )
+
         # Build the REST API URL - use streamAssist with web grounding
-        url = f"https://us-discoveryengine.googleapis.com/v1alpha/projects/{project_number}/locations/us/collections/default_collection/engines/{engine_id}/assistants/{assistant_id}:streamAssist"
+        url = f"https://{api_endpoint}/v1alpha/projects/{project_number}/locations/{location}/collections/default_collection/engines/{engine_id}/assistants/{assistant_id}:streamAssist"
 
         logger.info(f"Web Grounding Search via REST API: {url}")
 
         # Build assistant resource name
-        assistant_name = f"projects/{project_number}/locations/us/collections/default_collection/engines/{engine_id}/assistants/{assistant_id}"
+        assistant_name = f"projects/{project_number}/locations/{location}/collections/default_collection/engines/{engine_id}/assistants/{assistant_id}"
 
         # Build request body with web grounding enabled
         request_body = {
             "name": assistant_name,
             "query": {"text": query},
-            "session": f"projects/{project_number}/locations/us/collections/default_collection/engines/{engine_id}/sessions/-",
+            "session": f"projects/{project_number}/locations/{location}/collections/default_collection/engines/{engine_id}/sessions/-",
             "answerGenerationMode": "NORMAL",
             "toolsSpec": {
                 "webGroundingSpec": {}  # Enable web grounding
@@ -154,7 +165,7 @@ async def web_grounding_search(
                 "query": query,
                 "url": url,
                 "api_version": "v1alpha",
-                "location": "us",
+                "location": location,
                 "web_grounding_enabled": True,
             },
             "response": {
@@ -298,6 +309,7 @@ async def get_engine_data_stores(
 async def list_assistants(
     engine_id: str,
     project_number: str = Query(..., description="Google Cloud project number"),
+    location: str = Query("us", description="Engine location (us, eu, global)"),
 ):
     """
     List all assistants within an engine using v1alpha API.
@@ -307,6 +319,7 @@ async def list_assistants(
     Args:
         engine_id: The ID of the engine
         project_number: Google Cloud project number
+        location: Engine location (us, eu, global)
 
     Returns:
         Dictionary with assistants list
@@ -317,8 +330,15 @@ async def list_assistants(
         if not credentials.valid:
             credentials.refresh(AuthRequest())
 
+        # Determine API endpoint based on location
+        api_endpoint = (
+            "discoveryengine.googleapis.com"
+            if location == "global"
+            else f"{location}-discoveryengine.googleapis.com"
+        )
+
         # Build the REST API URL - use v1alpha with region-specific endpoint
-        url = f"https://us-discoveryengine.googleapis.com/v1alpha/projects/{project_number}/locations/us/collections/default_collection/engines/{engine_id}/assistants"
+        url = f"https://{api_endpoint}/v1alpha/projects/{project_number}/locations/{location}/collections/default_collection/engines/{engine_id}/assistants"
 
         logger.info(f"Listing assistants via REST API: {url}")
 
@@ -337,7 +357,7 @@ async def list_assistants(
         return {
             "request_params": {
                 "engine_id": engine_id,
-                "location": "us",
+                "location": location,
                 "url": url,
                 "api_version": "v1alpha",
             },
@@ -368,6 +388,7 @@ async def list_assistants(
 async def list_agents(
     engine_id: str,
     project_number: str = Query(..., description="Google Cloud project number"),
+    location: str = Query("us", description="Engine location (us, eu, global)"),
 ):
     """
     List all agents within the default assistant.
@@ -378,6 +399,7 @@ async def list_agents(
     Args:
         engine_id: The ID of the engine
         project_number: Google Cloud project number
+        location: Engine location (us, eu, global)
 
     Returns:
         Dictionary with agents list
@@ -388,8 +410,15 @@ async def list_agents(
         if not credentials.valid:
             credentials.refresh(AuthRequest())
 
-        # Build the REST API URL - use v1alpha and 'us' location for agents
-        url = f"https://us-discoveryengine.googleapis.com/v1alpha/projects/{project_number}/locations/us/collections/default_collection/engines/{engine_id}/assistants/default_assistant/agents"
+        # Determine API endpoint based on location
+        api_endpoint = (
+            "discoveryengine.googleapis.com"
+            if location == "global"
+            else f"{location}-discoveryengine.googleapis.com"
+        )
+
+        # Build the REST API URL - use v1alpha
+        url = f"https://{api_endpoint}/v1alpha/projects/{project_number}/locations/{location}/collections/default_collection/engines/{engine_id}/assistants/default_assistant/agents"
 
         logger.info(f"Listing agents via REST API: {url}")
 
@@ -408,7 +437,7 @@ async def list_agents(
         return {
             "request_params": {
                 "engine_id": engine_id,
-                "location": "us",
+                "location": location,
                 "url": url,
                 "api_version": "v1alpha",
             },
@@ -439,6 +468,7 @@ async def get_agent(
     engine_id: str,
     agent_name: str,
     project_number: str = Query(..., description="Google Cloud project number"),
+    location: str = Query("us", description="Engine location (us, eu, global)"),
 ):
     """
     Get details of a specific agent using v1alpha API.
@@ -447,6 +477,7 @@ async def get_agent(
         engine_id: The ID of the engine
         agent_name: The name of the agent (e.g., "default_idea_generation", "deep_research")
         project_number: Google Cloud project number
+        location: Engine location (us, eu, global)
 
     Returns:
         Dictionary with agent details
@@ -457,8 +488,15 @@ async def get_agent(
         if not credentials.valid:
             credentials.refresh(AuthRequest())
 
+        # Determine API endpoint based on location
+        api_endpoint = (
+            "discoveryengine.googleapis.com"
+            if location == "global"
+            else f"{location}-discoveryengine.googleapis.com"
+        )
+
         # Build the REST API URL - get individual agent details
-        url = f"https://us-discoveryengine.googleapis.com/v1alpha/projects/{project_number}/locations/us/collections/default_collection/engines/{engine_id}/assistants/default_assistant/agents/{agent_name}"
+        url = f"https://{api_endpoint}/v1alpha/projects/{project_number}/locations/{location}/collections/default_collection/engines/{engine_id}/assistants/default_assistant/agents/{agent_name}"
 
         logger.info(f"Getting agent via REST API: {url}")
 
@@ -480,7 +518,7 @@ async def get_agent(
                 "agent_name": agent_name,
                 "url": url,
                 "api_version": "v1alpha",
-                "location": "us",
+                "location": location,
             },
             "response": data,
             "success": True,
@@ -507,6 +545,7 @@ async def stream_assist(
     assistant_id: str,
     query: str,
     project_number: str = Query(..., description="Google Cloud project number"),
+    location: str = Query("us", description="Engine location (us, eu, global)"),
     agent_name: str = "",
     session_id: str = "-",
 ):
@@ -518,6 +557,7 @@ async def stream_assist(
         assistant_id: The ID of the assistant (e.g., "default_assistant")
         query: The query text
         project_number: Google Cloud project number
+        location: Engine location (us, eu, global)
         agent_name: The agent name to use (e.g., "default_idea_generation") - optional
         session_id: Session ID for conversation continuity (default: "-" for new session)
 
@@ -530,26 +570,33 @@ async def stream_assist(
         if not credentials.valid:
             credentials.refresh(AuthRequest())
 
-        # Build the REST API URL - use v1alpha with us location
-        url = f"https://us-discoveryengine.googleapis.com/v1alpha/projects/{project_number}/locations/us/collections/default_collection/engines/{engine_id}/assistants/{assistant_id}:streamAssist"
+        # Determine API endpoint based on location
+        api_endpoint = (
+            "discoveryengine.googleapis.com"
+            if location == "global"
+            else f"{location}-discoveryengine.googleapis.com"
+        )
+
+        # Build the REST API URL - use v1alpha
+        url = f"https://{api_endpoint}/v1alpha/projects/{project_number}/locations/{location}/collections/default_collection/engines/{engine_id}/assistants/{assistant_id}:streamAssist"
 
         logger.info(f"StreamAssist via REST API: {url}")
 
         # Build assistant resource name
-        assistant_name = f"projects/{project_number}/locations/us/collections/default_collection/engines/{engine_id}/assistants/{assistant_id}"
+        assistant_name = f"projects/{project_number}/locations/{location}/collections/default_collection/engines/{engine_id}/assistants/{assistant_id}"
 
         # Build request body according to v1alpha spec
         request_body = {
             "name": assistant_name,
             "query": {"text": query},
-            "session": f"projects/{project_number}/locations/us/collections/default_collection/engines/{engine_id}/sessions/{session_id}",
+            "session": f"projects/{project_number}/locations/{location}/collections/default_collection/engines/{engine_id}/sessions/{session_id}",
             "assistSkippingMode": "REQUEST_ASSIST",
             "answerGenerationMode": "AGENT",
         }
 
         # Add agent config if agent_name provided - build full resource path
         if agent_name:
-            agent_resource_name = f"projects/{project_number}/locations/us/collections/default_collection/engines/{engine_id}/assistants/{assistant_id}/agents/{agent_name}"
+            agent_resource_name = f"projects/{project_number}/locations/{location}/collections/default_collection/engines/{engine_id}/assistants/{assistant_id}/agents/{agent_name}"
             request_body["agentsConfig"] = {"agent": agent_resource_name}
 
         logger.info(f"Request body: {request_body}")
@@ -598,7 +645,7 @@ async def stream_assist(
                 "session_id": session_id,
                 "url": url,
                 "api_version": "v1alpha",
-                "location": "us",
+                "location": location,
             },
             "response": {
                 "chunks": chunks,

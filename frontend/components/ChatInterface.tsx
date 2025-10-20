@@ -46,6 +46,7 @@ export default function ChatInterface({ config }: ChatInterfaceProps) {
       try {
         const params = new URLSearchParams({
           project_number: projectNumber,
+          location: location,
         });
         const response = await fetch(
           `http://localhost:8000/api-explorer/list-agents/${engineId}?${params}`
@@ -90,6 +91,7 @@ export default function ChatInterface({ config }: ChatInterfaceProps) {
         assistant_id: assistantId,
         query: userMessage,
         project_number: projectNumber,
+        location: location,
         agent_name: selectedAgent,
         session_id: sessionId,
       });

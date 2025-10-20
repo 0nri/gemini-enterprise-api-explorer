@@ -30,6 +30,7 @@ export default function SearchResults({ config }: SearchResultsProps) {
         assistant_id: assistantId,
         query: query,
         project_number: projectNumber,
+        location: location,
       });
 
       const response = await fetch(

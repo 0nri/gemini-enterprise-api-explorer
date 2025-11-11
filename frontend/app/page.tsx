@@ -5,13 +5,29 @@ import ConfigSidebar, { AgentspaceConfig } from '@/components/ConfigSidebar';
 import ApiExplorer from '@/components/ApiExplorer';
 import ChatInterface from '@/components/ChatInterface';
 import SearchResults from '@/components/SearchResults';
+import NotebookList from '@/components/NotebookList';
+import NotebookExplorer from '@/components/NotebookExplorer';
 import { getDefaultConfig, loadConfigFromStorage } from '@/lib/config';
+import { NotebookInfo } from '@/lib/api';
 
-type View = 'chat' | 'search' | 'api-explorer';
+type View = 'chat' | 'search' | 'api-explorer' | 'notebooks';
 
 export default function Home() {
   const [currentView, setCurrentView] = useState<View>('api-explorer');
   const [config, setConfig] = useState<AgentspaceConfig>(getDefaultConfig());
+  const [selectedNotebook, setSelectedNotebook] = useState<NotebookInfo | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleNotebookCreated = () => {
+    // Trigger refresh of notebook list
+    setRefreshKey(prev => prev + 1);
+  };
+
+  const handleNotebookDeleted = () => {
+    // Trigger refresh of notebook list and clear selection
+    setSelectedNotebook(null);
+    setRefreshKey(prev => prev + 1);
+  };
 
   useEffect(() => {
     const savedConfig = loadConfigFromStorage();
@@ -38,7 +54,17 @@ export default function Home() {
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              API Explorer
+              🔷 Gemini Enterprise Explorer
+            </button>
+            <button
+              onClick={() => setCurrentView('notebooks')}
+              className={`px-6 py-3 font-medium transition-colors ${
+                currentView === 'notebooks'
+                  ? 'text-blue-600 border-b-2 border-blue-600 bg-white'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              📓 NotebookLM
             </button>
             <button
               onClick={() => setCurrentView('chat')}
@@ -66,6 +92,24 @@ export default function Home() {
         {/* Content Area */}
         <div className="flex-1 overflow-auto">
           {currentView === 'api-explorer' && <ApiExplorer config={config} />}
+          {currentView === 'notebooks' && (
+            <div className="flex h-full">
+              <NotebookList
+                key={refreshKey}
+                projectNumber={config.projectNumber}
+                location={config.location}
+                selectedNotebookId={selectedNotebook?.notebook_id}
+                onNotebookSelect={setSelectedNotebook}
+              />
+              <NotebookExplorer
+                projectNumber={config.projectNumber}
+                location={config.location}
+                selectedNotebook={selectedNotebook}
+                onNotebookCreated={handleNotebookCreated}
+                onNotebookDeleted={handleNotebookDeleted}
+              />
+            </div>
+          )}
           {currentView === 'chat' && <ChatInterface config={config} />}
           {currentView === 'search' && <SearchResults config={config} />}
         </div>

@@ -208,7 +208,7 @@ export default function ApiExplorer({ config }: ApiExplorerProps) {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">API Explorer</h1>
+      <h1 className="text-2xl font-bold mb-6">🔷 Gemini Enterprise Explorer</h1>
       <p className="text-gray-600 mb-6">
         Explore Gemini Enterprise (Agentspace) API endpoints to understand assistants, agents, and their interactions.
       </p>
@@ -217,7 +217,7 @@ export default function ApiExplorer({ config }: ApiExplorerProps) {
         <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
           <p className="text-amber-800 font-medium">⚠️ Configuration Required</p>
           <p className="text-amber-700 text-sm mt-1">
-            Please configure your Project Number and Engine ID in the sidebar to use the API Explorer.
+            Please configure your Project Number and Engine ID in the sidebar to use Gemini Enterprise Explorer.
           </p>
         </div>
       )}

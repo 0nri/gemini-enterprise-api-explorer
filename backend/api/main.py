@@ -12,6 +12,7 @@ from backend.api.routes import (
     agents_router,
     api_explorer_router,
     conversations_router,
+    notebooks_router,
     search_router,
 )
 
@@ -24,7 +25,7 @@ logger = logging.getLogger(__name__)
 # Create FastAPI application
 app = FastAPI(
     title="Gemini Enterprise API Explorer",
-    description="API for accessing Gemini Enterprise (Agentspace) functionality",
+    description="API for accessing Gemini Enterprise (Agentspace) and NotebookLM Enterprise functionality",
     version="1.0.0",
 )
 
@@ -49,6 +50,7 @@ app.add_middleware(
 app.include_router(search_router)
 app.include_router(agents_router)
 app.include_router(conversations_router)
+app.include_router(notebooks_router)
 app.include_router(api_explorer_router)
 
 
@@ -67,6 +69,7 @@ async def root():
             "search": "/search",
             "agents": "/agents",
             "conversations": "/conversations",
+            "notebooks": "/notebooks",
             "docs": "/docs",
         },
     }

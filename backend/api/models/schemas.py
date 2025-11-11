@@ -81,3 +81,209 @@ class ErrorResponse(BaseModel):
 
     error: str
     detail: Optional[str] = None
+
+
+# NotebookLM Enterprise API Models
+
+
+class NotebookMetadata(BaseModel):
+    """Metadata for a notebook."""
+
+    user_role: Optional[str] = Field(None, alias="userRole")
+    is_shared: bool = Field(alias="isShared")
+    is_shareable: bool = Field(alias="isShareable")
+    last_viewed: Optional[str] = Field(None, alias="lastViewed")
+    create_time: Optional[str] = Field(None, alias="createTime")
+
+    class Config:
+        populate_by_name = True
+
+
+class NotebookInfo(BaseModel):
+    """Information about a NotebookLM notebook."""
+
+    name: str
+    title: str
+    notebook_id: str = Field(alias="notebookId")
+    emoji: str = ""
+    metadata: NotebookMetadata
+
+    class Config:
+        populate_by_name = True
+        allow_population_by_field_name = True
+
+
+class NotebookCreateRequest(BaseModel):
+    """Request model for creating a notebook."""
+
+    title: str = Field(..., description="UTF-8 encoded title for the notebook")
+    project_number: str = Field(..., description="Google Cloud project number")
+    location: str = Field("us", description="Location (us, eu, global)")
+
+
+class NotebookCreateResponse(BaseModel):
+    """Response model for notebook creation."""
+
+    title: str
+    notebook_id: str = Field(alias="notebookId")
+    emoji: str
+    metadata: NotebookMetadata
+    name: str
+
+    class Config:
+        populate_by_name = True
+        allow_population_by_field_name = True
+
+
+class NotebookListResponse(BaseModel):
+    """Response model for listing recently viewed notebooks."""
+
+    notebooks: List[NotebookInfo]
+
+
+class NotebookBatchDeleteRequest(BaseModel):
+    """Request model for batch deleting notebooks."""
+
+    names: List[str] = Field(
+        ..., description="List of notebook resource names to delete"
+    )
+    project_number: str = Field(..., description="Google Cloud project number")
+    location: str = Field("us", description="Location (us, eu, global)")
+
+
+class NotebookShareAccountRole(BaseModel):
+    """Account and role for notebook sharing."""
+
+    email: str = Field(..., description="Email address of the user")
+    role: str = Field(
+        ...,
+        description="Role (PROJECT_ROLE_OWNER, PROJECT_ROLE_WRITER, PROJECT_ROLE_READER, PROJECT_ROLE_NOT_SHARED)",
+    )
+
+
+class NotebookShareRequest(BaseModel):
+    """Request model for sharing a notebook."""
+
+    notebook_id: str = Field(..., description="Notebook ID to share")
+    account_and_roles: List[NotebookShareAccountRole] = Field(
+        ..., description="List of users and their roles"
+    )
+    project_number: str = Field(..., description="Google Cloud project number")
+    location: str = Field("us", description="Location (us, eu, global)")
+
+
+# Notebook Source Models
+
+
+class GoogleDriveContent(BaseModel):
+    """Google Drive content (Docs or Slides)."""
+
+    document_id: str = Field(..., description="Google Drive document ID")
+    mime_type: str = Field(
+        ...,
+        description="MIME type (application/vnd.google-apps.document or application/vnd.google-apps.presentation)",
+    )
+    source_name: str = Field(..., description="Display name for the source")
+
+
+class TextContent(BaseModel):
+    """Raw text content."""
+
+    source_name: str = Field(..., description="Display name for the source")
+    content: str = Field(..., description="Raw text content")
+
+
+class WebContent(BaseModel):
+    """Web content from URL."""
+
+    url: str = Field(..., description="URL of the web content")
+    source_name: str = Field(..., description="Display name for the source")
+
+
+class VideoContent(BaseModel):
+    """YouTube video content."""
+
+    url: str = Field(..., description="YouTube video URL")
+
+
+class UserContent(BaseModel):
+    """User content for notebook sources."""
+
+    google_drive_content: Optional[GoogleDriveContent] = None
+    text_content: Optional[TextContent] = None
+    web_content: Optional[WebContent] = None
+    video_content: Optional[VideoContent] = None
+
+
+class SourceId(BaseModel):
+    """Source identifier."""
+
+    id: str
+
+
+class SourceSettings(BaseModel):
+    """Source settings."""
+
+    status: str
+
+
+class SourceInfo(BaseModel):
+    """Information about a notebook source."""
+
+    source_id: SourceId = Field(alias="sourceId")
+    title: str
+    metadata: Optional[Dict[str, Any]] = None
+    settings: SourceSettings
+    name: str
+
+    class Config:
+        populate_by_name = True
+        allow_population_by_field_name = True
+
+
+class NotebookSourceBatchCreateRequest(BaseModel):
+    """Request model for batch creating notebook sources."""
+
+    notebook_id: str = Field(..., description="Notebook ID")
+    user_contents: List[UserContent] = Field(
+        ..., description="List of user content to add as sources"
+    )
+    project_number: str = Field(..., description="Google Cloud project number")
+    location: str = Field("us", description="Location (us, eu, global)")
+
+
+class NotebookSourceBatchCreateResponse(BaseModel):
+    """Response model for batch creating notebook sources."""
+
+    sources: List[SourceInfo]
+
+
+class NotebookSourceBatchDeleteRequest(BaseModel):
+    """Request model for batch deleting notebook sources."""
+
+    notebook_id: str = Field(..., description="Notebook ID")
+    names: List[str] = Field(
+        ..., description="List of source resource names to delete"
+    )
+    project_number: str = Field(..., description="Google Cloud project number")
+    location: str = Field("us", description="Location (us, eu, global)")
+
+
+class NotebookSourceUploadRequest(BaseModel):
+    """Request model for uploading a file as source."""
+
+    notebook_id: str = Field(..., description="Notebook ID")
+    file_name: str = Field(..., description="Display name for the file")
+    content_type: str = Field(..., description="Content type of the file")
+    project_number: str = Field(..., description="Google Cloud project number")
+    location: str = Field("us", description="Location (us, eu, global)")
+
+
+class NotebookSourceUploadResponse(BaseModel):
+    """Response model for uploading a file."""
+
+    source_id: SourceId = Field(alias="sourceId")
+
+    class Config:
+        populate_by_name = True
+        allow_population_by_field_name = True

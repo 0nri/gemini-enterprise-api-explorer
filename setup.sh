@@ -13,7 +13,8 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}╔════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║   Gemini Enterprise API Explorer - Setup & Start          ║${NC}"
+echo -e "${BLUE}║  Gemini Enterprise & NotebookLM API Explorer              ║${NC}"
+echo -e "${BLUE}║              Setup & Start                                 ║${NC}"
 echo -e "${BLUE}╔════════════════════════════════════════════════════════════╗${NC}"
 echo ""
 
@@ -106,9 +107,7 @@ echo ""
 
 # Start backend in background
 echo -e "${BLUE}  Starting backend server...${NC}"
-cd backend
-source .venv/bin/activate
-cd ..
+source backend/.venv/bin/activate
 python -m backend.api.main > /dev/null 2>&1 &
 BACKEND_PID=$!
 echo -e "${GREEN}  ✓ Backend started (PID: $BACKEND_PID)${NC}"
@@ -171,9 +170,17 @@ echo ""
 echo -e "${BLUE}📝 Next Steps:${NC}"
 echo "  1. Configure your Google Cloud credentials in the sidebar:"
 echo "     • Project Number (your GCP project number)"
-echo "     • Engine ID (your Agentspace engine ID)"
+echo "     • Engine ID (your Agentspace engine ID, if using Gemini features)"
+echo "     • Location (us, eu, or global)"
 echo ""
-echo "  2. Start exploring the API endpoints!"
+echo "  2. Explore the features:"
+echo "     • 🤖 API Explorer - Test Gemini Enterprise endpoints"
+echo "     • 📓 NotebookLM - Create and manage notebooks with data sources"
+echo "     • 💬 Chat - Interactive chat interface"
+echo "     • 🔍 Search - Enterprise search functionality"
+echo ""
+echo "  3. For NotebookLM Google Drive access (optional):"
+echo "     Run: gcloud auth login --enable-gdrive-access"
 echo ""
 echo -e "${YELLOW}⚠️  Important:${NC}"
 echo "  • Backend PID: $BACKEND_PID"

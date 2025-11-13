@@ -4,6 +4,7 @@ Client modules for Google Discovery Engine API.
 
 from .agent_client import AgentClient
 from .conversation_client import ConversationClient
+from .notebook_client import NotebookClient
 from .search_client import SearchClient
 
-__all__ = ["SearchClient", "AgentClient", "ConversationClient"]
+__all__ = ["SearchClient", "AgentClient", "ConversationClient", "NotebookClient"]

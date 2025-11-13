@@ -3,15 +3,25 @@
 import { useEffect, useState } from 'react';
 import { listAgents, type EngineInfo } from '@/lib/api';
 
-export default function AgentList() {
+interface AgentListProps {
+  projectNumber: string;
+  location: string;
+}
+
+export default function AgentList({ projectNumber, location }: AgentListProps) {
   const [agents, setAgents] = useState<EngineInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchAgents() {
+      if (!projectNumber) {
+        setLoading(false);
+        return;
+      }
+      
       try {
-        const response = await listAgents();
+        const response = await listAgents(projectNumber, location);
         setAgents(response.engines);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load agents');
@@ -21,7 +31,7 @@ export default function AgentList() {
     }
 
     fetchAgents();
-  }, []);
+  }, [projectNumber, location]);
 
   if (loading) {
     return (

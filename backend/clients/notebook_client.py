@@ -2,14 +2,10 @@
 NotebookLM client for Google Discovery Engine API.
 """
 
-import json
 from typing import Any, Dict, List, Optional
 
 import requests
 from google.auth.transport.requests import Request
-from google.oauth2 import service_account
-
-from backend import config
 
 
 class NotebookClient:
@@ -83,14 +79,17 @@ class NotebookClient:
         data = {"title": title}
 
         import logging
+
         logger = logging.getLogger(__name__)
         logger.info(f"Creating notebook at URL: {url}")
-        
+
         response = requests.post(url, headers=headers, json=data)
-        
+
         if not response.ok:
-            logger.error(f"Failed to create notebook. Status: {response.status_code}, Response: {response.text}")
-        
+            logger.error(
+                f"Failed to create notebook. Status: {response.status_code}, Response: {response.text}"
+            )
+
         response.raise_for_status()
         return response.json()
 
@@ -135,18 +134,23 @@ class NotebookClient:
             params["pageSize"] = page_size
 
         import logging
+
         logger = logging.getLogger(__name__)
         logger.info(f"Listing notebooks at URL: {url}")
         logger.info(f"Using params: {params}")
-        
+
         response = requests.get(url, headers=headers, params=params)
-        
+
         if not response.ok:
-            logger.error(f"Failed to list notebooks. Status: {response.status_code}, Response: {response.text}")
-        
+            logger.error(
+                f"Failed to list notebooks. Status: {response.status_code}, Response: {response.text}"
+            )
+
         response.raise_for_status()
         result = response.json()
-        logger.info(f"Successfully retrieved {len(result.get('notebooks', []))} notebooks")
+        logger.info(
+            f"Successfully retrieved {len(result.get('notebooks', []))} notebooks"
+        )
         return result
 
     def batch_delete(self, notebook_names: List[str]) -> Dict[str, Any]:
@@ -194,7 +198,9 @@ class NotebookClient:
         response.raise_for_status()
         return response.json()
 
-    def get_notebook_url(self, notebook_id: str, use_google_identity: bool = True) -> str:
+    def get_notebook_url(
+        self, notebook_id: str, use_google_identity: bool = True
+    ) -> str:
         """
         Generate the browser URL for accessing a notebook.
 
@@ -205,7 +211,11 @@ class NotebookClient:
         Returns:
             URL string for accessing the notebook in a browser
         """
-        domain = "notebooklm.cloud.google.com" if use_google_identity else "notebooklm.cloud.google"
+        domain = (
+            "notebooklm.cloud.google.com"
+            if use_google_identity
+            else "notebooklm.cloud.google"
+        )
         return f"https://{domain}/{self.location}/notebook/{notebook_id}?project={self.project_number}"
 
     # Notebook Source Management Methods
@@ -303,17 +313,20 @@ class NotebookClient:
         }
 
         import logging
+
         logger = logging.getLogger(__name__)
         logger.info(f"Uploading file to URL: {url}")
-        logger.info(f"Headers: {dict((k, v if k != 'Authorization' else 'Bearer ***') for k, v in headers.items())}")
+        logger.info(
+            f"Headers: {dict((k, v if k != 'Authorization' else 'Bearer ***') for k, v in headers.items())}"
+        )
         logger.info(f"File size: {len(file_data)} bytes")
 
         response = requests.post(url, headers=headers, data=file_data)
-        
+
         if not response.ok:
             logger.error(f"Upload failed. Status: {response.status_code}")
             logger.error(f"Response headers: {dict(response.headers)}")
             logger.error(f"Response body: {response.text}")
-        
+
         response.raise_for_status()
         return response.json()

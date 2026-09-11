@@ -36,4 +36,4 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 
 # Run the server from project root (this will show all logs)
-python -m backend.api.main
+PYTHONPATH=. python -m backend.api.main

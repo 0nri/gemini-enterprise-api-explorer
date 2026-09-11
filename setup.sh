@@ -65,39 +65,36 @@ echo -e "${GREEN}✓ npm ${NPM_VERSION} found${NC}"
 echo ""
 echo -e "${BLUE}🔧 Setting up backend...${NC}"
 
-# Create Python virtual environment if it doesn't exist
-if [ ! -d "backend/.venv" ]; then
+# Check if Python virtual environment exists and is healthy
+VENV_HEALTHY=false
+if [ -d "backend/.venv" ] && backend/.venv/bin/python -c "import sys" >/dev/null 2>&1; then
+    VENV_HEALTHY=true
+fi
+
+if [ "$VENV_HEALTHY" = false ]; then
     echo "  Creating Python virtual environment..."
-    cd backend
-    python3 -m venv .venv
-    cd ..
+    rm -rf backend/.venv
+    python3 -m venv backend/.venv
     echo -e "${GREEN}  ✓ Virtual environment created${NC}"
 else
-    echo -e "${GREEN}  ✓ Virtual environment already exists${NC}"
+    echo -e "${GREEN}  ✓ Virtual environment already exists and is healthy${NC}"
 fi
 
 # Activate virtual environment and install dependencies
 echo "  Installing Python dependencies..."
-cd backend
-source .venv/bin/activate
-pip install --upgrade pip > /dev/null 2>&1
-pip install -r requirements.txt > /dev/null 2>&1
-cd ..
+backend/.venv/bin/pip install --upgrade pip > /dev/null 2>&1 || true
+backend/.venv/bin/pip install -r backend/requirements.txt
 echo -e "${GREEN}  ✓ Python dependencies installed${NC}"
 
 echo ""
 echo -e "${BLUE}🔧 Setting up frontend...${NC}"
 
 # Install Node.js dependencies
-if [ ! -d "frontend/node_modules" ]; then
-    echo "  Installing Node.js dependencies (this may take a few minutes)..."
-    cd frontend
-    npm install > /dev/null 2>&1
-    cd ..
-    echo -e "${GREEN}  ✓ Node.js dependencies installed${NC}"
-else
-    echo -e "${GREEN}  ✓ Node.js dependencies already installed${NC}"
-fi
+echo "  Ensuring Node.js dependencies are up to date..."
+cd frontend
+npm install
+cd ..
+echo -e "${GREEN}  ✓ Node.js dependencies up to date${NC}"
 
 echo ""
 echo -e "${GREEN}✅ Setup complete!${NC}"
@@ -107,12 +104,12 @@ echo ""
 
 # Start backend in background
 echo -e "${BLUE}  Starting backend server...${NC}"
-source backend/.venv/bin/activate
-python -m backend.api.main > /dev/null 2>&1 &
+PYTHONPATH=. backend/.venv/bin/python -m backend.api.main > backend.log 2>&1 &
 BACKEND_PID=$!
 echo -e "${GREEN}  ✓ Backend started (PID: $BACKEND_PID)${NC}"
 echo "    Backend URL: http://localhost:8000"
 echo "    API Docs: http://localhost:8000/docs"
+echo "    Log File: backend.log"
 
 # Wait for backend to be ready
 echo ""
@@ -123,7 +120,8 @@ for i in {1..30}; do
         break
     fi
     if [ $i -eq 30 ]; then
-        echo -e "${RED}  ✗ Backend failed to start${NC}"
+        echo -e "${RED}  ✗ Backend failed to start. Last 20 lines of backend.log:${NC}"
+        tail -n 20 backend.log 2>/dev/null || true
         kill $BACKEND_PID 2>/dev/null || true
         exit 1
     fi
@@ -134,11 +132,12 @@ done
 echo ""
 echo -e "${BLUE}  Starting frontend server...${NC}"
 cd frontend
-npm run dev > /dev/null 2>&1 &
+npm run dev > ../frontend.log 2>&1 &
 FRONTEND_PID=$!
 cd ..
 echo -e "${GREEN}  ✓ Frontend started (PID: $FRONTEND_PID)${NC}"
 echo "    Frontend URL: http://localhost:3000"
+echo "    Log File: frontend.log"
 
 # Wait a moment for frontend to start
 sleep 3

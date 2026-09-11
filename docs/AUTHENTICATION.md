@@ -44,7 +44,7 @@ The response looks like:
 
 ```json
 {
-  "access_token": "ya29.dr.AaT61Tc6Ntv1ktbGkaQ9U_MQfiQw...",
+  "access_token": "<google-cloud-access-token-ya29...>",
   "issued_token_type": "urn:ietf:params:oauth:token-type:access_token",
   "token_type": "Bearer",
   "expires_in": 3600
@@ -181,5 +181,3 @@ There is no persistent Google-side session to revoke. Simply stop requesting new
 
 - [Obtain short-lived tokens for Workforce Identity Federation](https://cloud.google.com/iam/docs/workforce-obtaining-short-lived-credentials) (Google's canonical reference for the STS REST call above)
 - [Configure Workforce Identity Federation with Microsoft Entra ID](https://cloud.google.com/iam/docs/workforce-sign-in-microsoft-entra-id) (administrator setup — not needed if your admin has already done this)
-</content>
-<parameter name="i">Simplifying AUTHENTICATION.md to headless-only flow

@@ -20,6 +20,9 @@ router = APIRouter(prefix="/agents", tags=["agents"])
 async def list_agents(
     project_number: str = Query(..., description="Google Cloud project number"),
     location: str = Query("us", description="Engine location (us, eu, global)"),
+    use_adc_quota: bool = Query(
+        False, description="Use ADC's ambient quota project instead of project_number"
+    ),
 ):
     """
     List all available agents/engines.
@@ -27,6 +30,7 @@ async def list_agents(
     Args:
         project_number: Google Cloud project number
         location: Engine location (us, eu, global)
+        use_adc_quota: Use ADC's ambient quota project instead of project_number
 
     Returns:
         List of available engines with their details
@@ -42,6 +46,7 @@ async def list_agents(
         agent_client = AgentClient(
             project_number=project_number,
             location=location,
+            use_adc_quota=use_adc_quota,
         )
 
         engines = agent_client.list_engines()
@@ -59,6 +64,9 @@ async def get_agent(
     engine_id: str,
     project_number: str = Query(..., description="Google Cloud project number"),
     location: str = Query("us", description="Engine location (us, eu, global)"),
+    use_adc_quota: bool = Query(
+        False, description="Use ADC's ambient quota project instead of project_number"
+    ),
 ):
     """
     Get details for a specific agent/engine.
@@ -67,6 +75,7 @@ async def get_agent(
         engine_id: The ID of the engine to retrieve
         project_number: Google Cloud project number
         location: Engine location (us, eu, global)
+        use_adc_quota: Use ADC's ambient quota project instead of project_number
 
     Returns:
         Engine details
@@ -82,6 +91,7 @@ async def get_agent(
         agent_client = AgentClient(
             project_number=project_number,
             location=location,
+            use_adc_quota=use_adc_quota,
         )
 
         engine = agent_client.get_engine(engine_id)

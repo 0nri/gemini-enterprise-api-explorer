@@ -11,6 +11,22 @@ This application demonstrates the feasibility of interacting with **Gemini Enter
 
 > **Note:** This explorer app demonstrates API integration using **Application Default Credentials (ADC)**, not user OAuth credentials. For production applications serving end users, you would typically implement OAuth 2.0 for user authentication.
 
+## Features
+
+### Gemini Enterprise
+
+- **API Explorer** — browse and call Gemini Enterprise / Discovery Engine REST endpoints directly (engine details, data stores, agent catalog) with raw request/response inspection.
+- **Chat** — converse with any no-code/low-code workflow agent, or the managed **Deep Research** agent via its two-phase plan/run flow (streamed research plan, questions, answers, and a cited final report). Agents defined via A2A are listed but marked unsupported and cannot be selected for an interactive turn.
+- **Search** — run grounded search queries against your engine's data stores.
+- **Live auth status** — the sidebar shows which ADC identity is actually active (user account, service account, impersonated, or Workforce/Workload Identity Federation) and its resolved account, so you can confirm how the backend is authenticating before making calls.
+
+### NotebookLM Enterprise
+
+- **Notebook Management** — create, list, share, and delete notebooks.
+- **Multi-format Sources** — add text, web URLs, YouTube videos, Google Drive docs, and files.
+- **Collaboration** — share notebooks with team members.
+- **Source Organization** — manage and organize notebook data sources.
+
 ## Prerequisites
 
 Before running the application, ensure you have:
@@ -38,6 +54,22 @@ gcloud auth login --enable-gdrive-access
 # Verify authentication
 gcloud auth application-default print-access-token
 ```
+
+#### Using Workforce Identity Federation (WIF)
+
+If your organization authenticates through a Workforce Identity Federation pool instead of a personal Google account, point ADC at your WIF credential config instead:
+
+```bash
+# Browser sign-in against a Workforce Identity Federation pool
+gcloud auth application-default login --login-config=/path/to/credential-config.json
+
+# Or point ADC directly at a WIF credential-config JSON (no interactive browser step)
+export GOOGLE_APPLICATION_CREDENTIALS=/path/to/credential-config.json
+```
+
+No code changes are required — the backend detects the credential kind automatically, and the sidebar's live auth status badge labels it "Workforce Identity Federation" or "Workload Identity Federation" once configured.
+
+> **Note:** The steps above are for *this app's own backend* (operator-side ADC). If you're an end user who wants to call the Gemini Enterprise API directly with your own Entra ID identity via Workforce Identity Federation — including embedding it in another app on the same Entra tenant — see [Authentication](docs/AUTHENTICATION.md).
 
 > **Important:** Ensure you have the necessary permissions in your Google Cloud project to access Discovery Engine APIs and NotebookLM Enterprise.
 
@@ -71,25 +103,10 @@ The script will:
 - **Engine ID**: Discovery Engine → Engines → Your engine name
 - **Location**: Usually `us`, `eu`, or `global` (default: `us`)
 
-## Features
-
-### Gemini Enterprise
-
-- **API Explorer** - Test various Gemini Enterprise API endpoints
-- **Chat Interface** - Interactive chat with Gemini Enterprise agents
-- **Search** - Enterprise search functionality
-- **Agent Management** - List and manage available agents
-
-### NotebookLM Enterprise
-
-- **Notebook Management** - Create, list, share, and delete notebooks
-- **Multi-format Sources** - Add text, web URLs, YouTube videos, Google Drive docs, and files
-- **Collaboration** - Share notebooks with team members
-- **Source Organization** - Manage and organize notebook data sources
-
 ## 📚 Documentation
 
 - **[NotebookLM Guide](docs/NOTEBOOKLM.md)** - Complete NotebookLM features and API reference
+- **[Authentication](docs/AUTHENTICATION.md)** - How an end user (or another app on the same Entra tenant) obtains a Gemini Enterprise API token via Workforce Identity Federation with Microsoft Entra ID
 - **[Architecture](docs/ARCHITECTURE.md)** - Technical architecture and development guide
 - **[API Reference](http://localhost:8000/docs)** - Interactive API docs (when backend is running)
 

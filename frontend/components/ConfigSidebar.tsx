@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import AuthStatusBadge from './AuthStatusBadge';
 
 export interface AgentspaceConfig {
   projectNumber: string;
   location: 'us' | 'eu' | 'global';
   engineId: string;
   assistantId: string;
+  useAdcQuota: boolean;
 }
 
 interface ConfigSidebarProps {
@@ -50,6 +52,7 @@ export default function ConfigSidebar({ config, onConfigChange }: ConfigSidebarP
         projectNumber: localConfig.projectNumber.trim(),
         engineId: localConfig.engineId.trim(),
         assistantId: localConfig.assistantId.trim(),
+        useAdcQuota: localConfig.useAdcQuota,
       };
       onConfigChange(trimmedConfig);
       localStorage.setItem('agentspace-config', JSON.stringify(trimmedConfig));
@@ -75,6 +78,10 @@ export default function ConfigSidebar({ config, onConfigChange }: ConfigSidebarP
             </>
           )}
         </div>
+      </div>
+
+      <div className="mb-6">
+        <AuthStatusBadge />
       </div>
 
       <div className="space-y-4 flex-1">
@@ -144,8 +151,23 @@ export default function ConfigSidebar({ config, onConfigChange }: ConfigSidebarP
           </p>
         </div>
 
+        <div>
+          <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+            <input
+              type="checkbox"
+              checked={localConfig.useAdcQuota}
+              onChange={(e) => setLocalConfig({ ...localConfig, useAdcQuota: e.target.checked })}
+              className="rounded border-gray-300 focus:ring-2 focus:ring-blue-500"
+            />
+            Use ADC default quota project
+          </label>
+          <p className="mt-1 text-xs text-gray-500">
+            When unchecked (default), API calls bill against the Project Number above. Check this to fall back to your local Application Default Credentials quota project instead.
+          </p>
+        </div>
+
         {errors.length > 0 && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+          <div className="bg-red-50 border border-red-200 rounded-lg shadow-sm p-3">
             <p className="text-sm font-medium text-red-800 mb-1">Configuration Errors:</p>
             <ul className="text-sm text-red-700 list-disc list-inside">
               {errors.map((error, idx) => (
@@ -163,9 +185,9 @@ export default function ConfigSidebar({ config, onConfigChange }: ConfigSidebarP
         Apply Configuration
       </button>
 
-      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg shadow-sm">
         <p className="text-xs text-blue-800">
-          <strong>Note:</strong> Configuration is saved in your browser's local storage.
+          <strong>Note:</strong> Configuration is saved in your browser&apos;s local storage.
         </p>
       </div>
     </div>

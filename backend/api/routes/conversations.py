@@ -44,6 +44,7 @@ async def converse(request: ConversationRequest):
             project_number=request.project_number,
             location=request.location,
             engine_id=request.engine_id,
+            use_adc_quota=request.use_adc_quota,
         )
 
         result = conversation_client.converse(
@@ -85,6 +86,7 @@ async def converse_stream(request: ConversationRequest):
         project_number=request.project_number,
         location=request.location,
         engine_id=request.engine_id,
+        use_adc_quota=request.use_adc_quota,
     )
 
     async def event_generator() -> AsyncIterator[str]:

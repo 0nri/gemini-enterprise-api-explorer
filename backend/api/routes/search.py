@@ -41,6 +41,7 @@ async def search(request: SearchRequest):
             project_number=request.project_number,
             location=request.location,
             engine_id=request.engine_id,
+            use_adc_quota=request.use_adc_quota,
         )
 
         result = search_client.search(

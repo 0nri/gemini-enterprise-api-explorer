@@ -13,6 +13,7 @@ export function getDefaultConfig(): AgentspaceConfig {
     location: 'us',
     engineId: '',
     assistantId: 'default_assistant',
+    useAdcQuota: false,
   };
 }
 

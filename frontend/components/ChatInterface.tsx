@@ -1,17 +1,32 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { AgentspaceConfig } from './ConfigSidebar';
+import { API_BASE_URL } from '@/lib/api';
+import { buildStreamAssistPayload, buildStreamAssistUrl } from '@/lib/streamAssist';
+import { ConfigWarning, RawJsonView } from '@/components/ui';
+import DeepResearchView from './DeepResearchView';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
   isStreaming?: boolean;
+  rawRequest?: unknown;
+  rawResponse?: unknown;
 }
+
+type AgentKind = 'no_code' | 'deep_research' | 'unsupported';
 
 interface Agent {
   name: string;
   displayName: string;
+  agentKind: AgentKind;
+}
+
+interface RawAgentItem {
+  name: string;
+  displayName?: string;
+  agent_kind?: AgentKind;
 }
 
 interface ChatInterfaceProps {
@@ -27,8 +42,32 @@ export default function ChatInterface({ config }: ChatInterfaceProps) {
   const [selectedAgent, setSelectedAgent] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { projectNumber, location, engineId, assistantId } = config;
+  const { projectNumber, location, engineId, assistantId, useAdcQuota } = config;
   const isConfigured = projectNumber && engineId;
+
+  const selectedAgentKind: AgentKind | undefined = selectedAgent
+    ? agents.find((agent) => agent.name === selectedAgent)?.agentKind
+    : undefined;
+
+  // Live preview of the streamAssist request that Send will trigger, so the
+  // exact payload (agent routing included) is visible before the first
+  // message is ever sent.
+  const requestPreview = useMemo(() => {
+    if (!isConfigured) return undefined;
+    const previewParams = {
+      projectNumber,
+      location,
+      engineId,
+      assistantId,
+      agentName: selectedAgent,
+      sessionId,
+      query: input,
+    };
+    return {
+      url: buildStreamAssistUrl(previewParams),
+      payload: buildStreamAssistPayload(previewParams),
+    };
+  }, [isConfigured, projectNumber, location, engineId, assistantId, selectedAgent, sessionId, input]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -47,16 +86,18 @@ export default function ChatInterface({ config }: ChatInterfaceProps) {
         const params = new URLSearchParams({
           project_number: projectNumber,
           location: location,
+          use_adc_quota: String(useAdcQuota),
         });
         const response = await fetch(
-          `http://localhost:8000/api-explorer/list-agents/${engineId}?${params}`
+          `${API_BASE_URL}/api-explorer/list-agents/${engineId}?${params}`
         );
         const data = await response.json();
         
         if (data.success && data.response?.agents) {
-          const agentList = data.response.agents.map((agent: any) => ({
+          const agentList = data.response.agents.map((agent: RawAgentItem) => ({
             name: agent.name.split('/').pop(), // Extract agent name from full path
             displayName: agent.displayName || agent.name.split('/').pop(),
+            agentKind: agent.agent_kind || 'no_code',
           }));
           setAgents(agentList);
         }
@@ -66,7 +107,7 @@ export default function ChatInterface({ config }: ChatInterfaceProps) {
     };
 
     fetchAgents();
-  }, [engineId, isConfigured, projectNumber, location, assistantId]);
+  }, [engineId, isConfigured, projectNumber, location, assistantId, useAdcQuota]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,16 +135,15 @@ export default function ChatInterface({ config }: ChatInterfaceProps) {
         location: location,
         agent_name: selectedAgent,
         session_id: sessionId,
+        use_adc_quota: String(useAdcQuota),
       });
 
       const response = await fetch(
-        `http://localhost:8000/api-explorer/stream-assist?${params.toString()}`,
+        `${API_BASE_URL}/api-explorer/stream-assist?${params.toString()}`,
         { method: 'POST' }
       );
 
       const data = await response.json();
-
-      console.log('Full response data:', JSON.stringify(data, null, 2));
 
       if (data.success) {
         // Extract the answer from chunks
@@ -133,6 +173,8 @@ export default function ChatInterface({ config }: ChatInterfaceProps) {
             role: 'assistant',
             content: answerText || 'No response received',
             isStreaming: false,
+            rawRequest: { url: data.request_url, payload: data.request_payload },
+            rawResponse: data,
           };
           return newMessages;
         });
@@ -173,6 +215,15 @@ export default function ChatInterface({ config }: ChatInterfaceProps) {
     setSessionId('-');
   };
 
+  const handleAgentChange = (agentName: string) => {
+    setSelectedAgent(agentName);
+    // A session pins the conversation to whatever agent context was active when
+    // it started; reusing it after switching agents silently ignores the new
+    // selection and continues answering under the old context. Start fresh.
+    setMessages([]);
+    setSessionId('-');
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Header with Agent Selector */}
@@ -193,27 +244,26 @@ export default function ChatInterface({ config }: ChatInterfaceProps) {
           Chat with Gemini Enterprise agents using natural language queries
         </p>
 
-        {!isConfigured && (
-          <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-            <p className="text-amber-800 font-medium text-sm">⚠️ Configuration Required</p>
-            <p className="text-amber-700 text-xs mt-1">
-              Please configure your Project Number and Engine ID in the sidebar to use Chat.
-            </p>
-          </div>
-        )}
+        {!isConfigured && <ConfigWarning feature="Chat" />}
         
         {/* Agent Selector */}
         <div className="flex items-center gap-3">
           <label className="text-sm font-medium text-gray-700">Select Agent:</label>
           <select
             value={selectedAgent}
-            onChange={(e) => setSelectedAgent(e.target.value)}
+            onChange={(e) => handleAgentChange(e.target.value)}
             className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">Default (No specific agent)</option>
             {agents.map((agent) => (
-              <option key={agent.name} value={agent.name}>
-                {agent.displayName}
+              <option
+                key={agent.name}
+                value={agent.name}
+                disabled={agent.agentKind === 'unsupported'}
+              >
+                {agent.agentKind === 'unsupported'
+                  ? `${agent.displayName} (unsupported)`
+                  : agent.displayName}
               </option>
             ))}
           </select>
@@ -225,61 +275,80 @@ export default function ChatInterface({ config }: ChatInterfaceProps) {
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.length === 0 ? (
-          <div className="text-center text-gray-500 mt-8">
-            <p className="text-lg mb-2">This simulates the Gemini Enterpise's Agent Interface</p>
-            <p className="text-sm">
-              Select an agent above and start a conversation by typing a message below
-            </p>
-          </div>
-        ) : (
-          messages.map((message, index) => (
-            <div
-              key={index}
-              className={`flex ${
-                message.role === 'user' ? 'justify-end' : 'justify-start'
-              }`}
-            >
-              <div
-                className={`max-w-3xl rounded-lg px-4 py-2 ${
-                  message.role === 'user'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-900'
-                }`}
-              >
-                <div className="whitespace-pre-wrap">{message.content}</div>
-                {message.isStreaming && (
-                  <span className="inline-block w-2 h-4 bg-current animate-pulse ml-1" />
-                )}
+      {selectedAgentKind === 'deep_research' ? (
+        <DeepResearchView config={config} agentName={selectedAgent} />
+      ) : (
+        <>
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {messages.length === 0 ? (
+              <div className="text-center text-gray-500 mt-8">
+                <p className="text-lg mb-2">This simulates the Gemini Enterpise&apos;s Agent Interface</p>
+                <p className="text-sm">
+                  Select an agent above and start a conversation by typing a message below
+                </p>
               </div>
-            </div>
-          ))
-        )}
-        <div ref={messagesEndRef} />
-      </div>
+            ) : (
+              messages.map((message, index) => (
+                <div
+                  key={index}
+                  className={`flex flex-col ${
+                    message.role === 'user' ? 'items-end' : 'items-start'
+                  }`}
+                >
+                  <div
+                    className={`max-w-3xl rounded-lg px-4 py-2 ${
+                      message.role === 'user'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-900'
+                    }`}
+                  >
+                    <div className="whitespace-pre-wrap">{message.content}</div>
+                    {message.isStreaming && (
+                      <span className="inline-block w-2 h-4 bg-current animate-pulse ml-1" />
+                    )}
+                  </div>
+                  {message.role === 'assistant' && message.rawResponse !== undefined && (
+                    <div className="max-w-3xl w-full mt-1 space-y-1 text-xs">
+                      <RawJsonView data={message.rawRequest} label="View raw request" />
+                      <RawJsonView data={message.rawResponse} label="View raw response" />
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+            <div ref={messagesEndRef} />
+          </div>
 
-      {/* Input */}
-      <div className="border-t border-gray-200 p-4">
-        <form onSubmit={handleSubmit} className="flex gap-2">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Type your message..."
-            disabled={isLoading}
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-          />
-          <button
-            type="submit"
-            disabled={isLoading || !input.trim() || !isConfigured}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-          >
-            {isLoading ? 'Sending...' : 'Send'}
-          </button>
-        </form>
-      </div>
+          {/* Request Preview */}
+          {isConfigured && (
+            <div className="border-t border-gray-200 px-4 pt-4">
+              <RawJsonView data={requestPreview} label="Preview: request that Send will trigger" />
+            </div>
+          )}
+
+          {/* Input */}
+          <div className="border-t border-gray-200 p-4">
+            <form onSubmit={handleSubmit} className="flex gap-2">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Type your message..."
+                disabled={isLoading}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+              />
+              <button
+                type="submit"
+                disabled={isLoading || !input.trim() || !isConfigured}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              >
+                {isLoading ? 'Sending...' : 'Send'}
+              </button>
+            </form>
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -91,27 +91,31 @@ export default function Home() {
 
         {/* Content Area */}
         <div className="flex-1 overflow-auto">
-          {currentView === 'api-explorer' && <ApiExplorer config={config} />}
-          {currentView === 'notebooks' && (
-            <div className="flex h-full">
-              <NotebookList
-                key={refreshKey}
-                projectNumber={config.projectNumber}
-                location={config.location}
-                selectedNotebookId={selectedNotebook?.notebook_id}
-                onNotebookSelect={setSelectedNotebook}
-              />
-              <NotebookExplorer
-                projectNumber={config.projectNumber}
-                location={config.location}
-                selectedNotebook={selectedNotebook}
-                onNotebookCreated={handleNotebookCreated}
-                onNotebookDeleted={handleNotebookDeleted}
-              />
-            </div>
-          )}
-          {currentView === 'chat' && <ChatInterface config={config} />}
-          {currentView === 'search' && <SearchResults config={config} />}
+          <div className={currentView === 'api-explorer' ? 'h-full' : 'hidden'}>
+            <ApiExplorer config={config} />
+          </div>
+          <div className={currentView === 'notebooks' ? 'flex h-full' : 'hidden'}>
+            <NotebookList
+              key={refreshKey}
+              projectNumber={config.projectNumber}
+              location={config.location}
+              selectedNotebookId={selectedNotebook?.notebook_id}
+              onNotebookSelect={setSelectedNotebook}
+            />
+            <NotebookExplorer
+              projectNumber={config.projectNumber}
+              location={config.location}
+              selectedNotebook={selectedNotebook}
+              onNotebookCreated={handleNotebookCreated}
+              onNotebookDeleted={handleNotebookDeleted}
+            />
+          </div>
+          <div className={currentView === 'chat' ? 'h-full' : 'hidden'}>
+            <ChatInterface config={config} />
+          </div>
+          <div className={currentView === 'search' ? 'h-full' : 'hidden'}>
+            <SearchResults config={config} />
+          </div>
         </div>
       </div>
     </div>

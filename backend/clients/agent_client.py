@@ -13,13 +13,14 @@ from backend import config
 class AgentClient:
     """Client for managing and listing agents/engines."""
 
-    def __init__(self, project_number: str, location: str):
+    def __init__(self, project_number: str, location: str, use_adc_quota: bool = False):
         """
         Initialize the agent client.
 
         Args:
             project_number: Google Cloud project number
             location: Engine location (us, eu, global)
+            use_adc_quota: Use ADC's ambient quota project instead of project_number
         """
         self.project_number = project_number
         self.location = location
@@ -33,7 +34,10 @@ class AgentClient:
             if location == "global"
             else f"{location}-discoveryengine.googleapis.com"
         )
-        client_options = ClientOptions(api_endpoint=api_endpoint)
+        client_options = ClientOptions(
+            api_endpoint=api_endpoint,
+            **({} if use_adc_quota else {"quota_project_id": project_number}),
+        )
         self.client = discoveryengine.EngineServiceClient(client_options=client_options)
 
     def list_engines(self) -> List[Dict[str, Any]]:

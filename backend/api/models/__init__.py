@@ -5,6 +5,8 @@ API models package.
 from .schemas import (
     ConversationRequest,
     ConversationResponse,
+    DeepResearchPlanRequest,
+    DeepResearchRunRequest,
     EngineInfo,
     EngineListResponse,
     ErrorResponse,
@@ -40,6 +42,8 @@ __all__ = [
     "SearchResult",
     "ConversationRequest",
     "ConversationResponse",
+    "DeepResearchPlanRequest",
+    "DeepResearchRunRequest",
     "EngineInfo",
     "EngineListResponse",
     "ErrorResponse",

@@ -2,6 +2,36 @@
 
 import { useState } from 'react';
 import { AgentspaceConfig } from './ConfigSidebar';
+import { API_BASE_URL } from '@/lib/api';
+import { Card, ConfigWarning, RawJsonView } from '@/components/ui';
+
+interface SearchCitation {
+  uri?: string;
+  title?: string;
+}
+
+interface SearchChunkReply {
+  groundedContent?: {
+    content?: {
+      text?: string;
+    };
+  };
+}
+
+interface SearchChunk {
+  answer?: {
+    replies?: SearchChunkReply[];
+    citations?: SearchCitation[];
+  };
+}
+
+interface SearchResultsData {
+  success?: boolean;
+  error?: { message?: string };
+  response?: {
+    chunks?: SearchChunk[];
+  };
+}
 
 interface SearchResultsProps {
   config: AgentspaceConfig;
@@ -9,11 +39,11 @@ interface SearchResultsProps {
 
 export default function SearchResults({ config }: SearchResultsProps) {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<any>(null);
+  const [results, setResults] = useState<SearchResultsData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { projectNumber, location, engineId, assistantId } = config;
+  const { projectNumber, location, engineId, assistantId, useAdcQuota } = config;
   const isConfigured = projectNumber && engineId;
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -31,10 +61,11 @@ export default function SearchResults({ config }: SearchResultsProps) {
         query: query,
         project_number: projectNumber,
         location: location,
+        use_adc_quota: String(useAdcQuota),
       });
 
       const response = await fetch(
-        `http://localhost:8000/api-explorer/web-grounding-search?${params.toString()}`,
+        `${API_BASE_URL}/api-explorer/web-grounding-search?${params.toString()}`,
         { method: 'POST' }
       );
 
@@ -78,14 +109,7 @@ export default function SearchResults({ config }: SearchResultsProps) {
           This simulates the main search bar with grounding enabled.  Search the web using Google Search with AI-powered answer synthesis.
         </p>
 
-        {!isConfigured && (
-          <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-            <p className="text-amber-800 font-medium">⚠️ Configuration Required</p>
-            <p className="text-amber-700 text-sm mt-1">
-              Please configure your Project Number and Engine ID in the sidebar to use Web Search.
-            </p>
-          </div>
-        )}
+        {!isConfigured && <ConfigWarning feature="Web Search" />}
 
         {/* Search Form */}
         <form onSubmit={handleSearch} className="flex gap-2">
@@ -129,22 +153,22 @@ export default function SearchResults({ config }: SearchResultsProps) {
           <div className="space-y-6">
             {/* Answer */}
             {getAnswerText() && (
-              <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+              <Card>
                 <h2 className="text-lg font-semibold mb-3 text-gray-900">Answer</h2>
                 <div className="prose max-w-none">
                   <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
                     {getAnswerText()}
                   </p>
                 </div>
-              </div>
+              </Card>
             )}
 
             {/* Sources/Citations (if available) */}
             {results.response?.chunks?.[0]?.answer?.citations && (
-              <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+              <Card>
                 <h2 className="text-lg font-semibold mb-3 text-gray-900">Sources</h2>
                 <div className="space-y-2">
-                  {results.response.chunks[0].answer.citations.map((citation: any, idx: number) => (
+                  {results.response.chunks[0].answer.citations.map((citation, idx) => (
                     <div key={idx} className="text-sm">
                       <a
                         href={citation.uri}
@@ -157,18 +181,11 @@ export default function SearchResults({ config }: SearchResultsProps) {
                     </div>
                   ))}
                 </div>
-              </div>
+              </Card>
             )}
 
             {/* Debug Info (collapsible) */}
-            <details className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <summary className="cursor-pointer font-semibold text-gray-700 hover:text-gray-900">
-                View Raw Response
-              </summary>
-              <pre className="mt-4 p-4 bg-white rounded border border-gray-200 overflow-x-auto text-xs">
-                {JSON.stringify(results, null, 2)}
-              </pre>
-            </details>
+            <RawJsonView data={results} label="View raw response" />
           </div>
         )}
 
@@ -179,6 +196,7 @@ export default function SearchResults({ config }: SearchResultsProps) {
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
+              suppressHydrationWarning
             >
               <path
                 strokeLinecap="round"

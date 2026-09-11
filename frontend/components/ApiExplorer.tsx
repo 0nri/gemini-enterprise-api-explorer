@@ -2,34 +2,93 @@
 
 import { useState } from 'react';
 import { AgentspaceConfig } from './ConfigSidebar';
+import { API_BASE_URL } from '@/lib/api';
+import { Badge, BadgeVariant, StatusBanner, RawJsonView, EmptyState, ConfigWarning } from '@/components/ui';
 
-interface ApiResponse {
-  request_params?: any;
-  response?: any;
-  error?: any;
+interface ApiResponse<T = unknown> {
+  request_params?: unknown;
+  response?: T;
+  error?: unknown;
   success?: boolean;
+}
+
+interface AgentSummary {
+  name?: string;
+  displayName?: string;
+}
+
+interface DataStoreSummary {
+  display_name?: string;
+  id?: string;
+  industry_vertical?: string;
+  content_config?: string;
+}
+
+interface AssistantSummary {
+  name?: string;
+  displayName?: string;
+}
+
+interface EngineDetailsResponse {
+  displayName?: string;
+  solutionType?: string;
+  industryVertical?: string;
+  createTime?: string;
+  dataStoreIds?: string[];
+}
+
+interface EngineDataStoresResponse {
+  data_store_count?: number;
+  data_stores?: DataStoreSummary[];
+}
+
+interface ListAssistantsResponse {
+  assistant_count?: number;
+  assistants?: AssistantSummary[];
+}
+
+interface ListAgentsResponse {
+  agents?: AgentSummary[];
+}
+
+interface GetAgentResponse {
+  state?: string;
+  displayName?: string;
+  description?: string;
+  [key: string]: unknown;
 }
 
 interface ApiExplorerProps {
   config: AgentspaceConfig;
 }
 
+const AGENT_STATE_BADGE_VARIANT: Record<string, BadgeVariant> = {
+  ENABLED: 'green',
+  CONFIGURED: 'amber',
+  DEPLOYING: 'amber',
+  DEPLOYMENT_FAILED: 'red',
+  CREATION_FAILED: 'red',
+  SUSPENDED: 'red',
+};
+
+const AGENT_DEFINITION_KEYS = [
+  'adkAgentDefinition',
+  'managedAgentDefinition',
+  'a2aAgentDefinition',
+  'dialogflowAgentDefinition',
+];
+
 export default function ApiExplorer({ config }: ApiExplorerProps) {
-  const [engineDetailsData, setEngineDetailsData] = useState<ApiResponse | null>(null);
-  const [engineDataStoresData, setEngineDataStoresData] = useState<ApiResponse | null>(null);
-  const [listAssistantsData, setListAssistantsData] = useState<ApiResponse | null>(null);
-  const [listAgentsData, setListAgentsData] = useState<ApiResponse | null>(null);
-  const [getAgentData, setGetAgentData] = useState<ApiResponse | null>(null);
-  const [streamAssistData, setStreamAssistData] = useState<ApiResponse | null>(null);
-  const [searchData, setSearchData] = useState<ApiResponse | null>(null);
+  const [engineDetailsData, setEngineDetailsData] = useState<ApiResponse<EngineDetailsResponse> | null>(null);
+  const [engineDataStoresData, setEngineDataStoresData] = useState<ApiResponse<EngineDataStoresResponse> | null>(null);
+  const [listAssistantsData, setListAssistantsData] = useState<ApiResponse<ListAssistantsResponse> | null>(null);
+  const [listAgentsData, setListAgentsData] = useState<ApiResponse<ListAgentsResponse> | null>(null);
+  const [getAgentData, setGetAgentData] = useState<ApiResponse<GetAgentResponse> | null>(null);
   
   const [loading, setLoading] = useState<string | null>(null);
   const [agentId, setAgentId] = useState('');
-  const [query, setQuery] = useState('Hello, how can you help me?');
-  const [searchQuery, setSearchQuery] = useState('What are the latest developments in quantum computing?');
-  const [sessionId, setSessionId] = useState('-');
 
-  const { projectNumber, location, engineId, assistantId } = config;
+  const { projectNumber, location, engineId, useAdcQuota } = config;
   const isConfigured = projectNumber && engineId;
 
   // Generate dynamic API endpoint display based on location
@@ -46,8 +105,9 @@ export default function ApiExplorer({ config }: ApiExplorerProps) {
       const params = new URLSearchParams({
         project_number: projectNumber,
         location: location,
+        use_adc_quota: String(useAdcQuota),
       });
-      const response = await fetch(`http://localhost:8000/api-explorer/engine-details/${engineId}?${params}`);
+      const response = await fetch(`${API_BASE_URL}/api-explorer/engine-details/${engineId}?${params}`);
       const data = await response.json();
       setEngineDetailsData(data);
     } catch (error) {
@@ -66,8 +126,9 @@ export default function ApiExplorer({ config }: ApiExplorerProps) {
       const params = new URLSearchParams({
         project_number: projectNumber,
         location: location,
+        use_adc_quota: String(useAdcQuota),
       });
-      const response = await fetch(`http://localhost:8000/api-explorer/engine-data-stores/${engineId}?${params}`);
+      const response = await fetch(`${API_BASE_URL}/api-explorer/engine-data-stores/${engineId}?${params}`);
       const data = await response.json();
       setEngineDataStoresData(data);
     } catch (error) {
@@ -86,8 +147,9 @@ export default function ApiExplorer({ config }: ApiExplorerProps) {
       const params = new URLSearchParams({
         project_number: projectNumber,
         location: location,
+        use_adc_quota: String(useAdcQuota),
       });
-      const response = await fetch(`http://localhost:8000/api-explorer/list-assistants/${engineId}?${params}`);
+      const response = await fetch(`${API_BASE_URL}/api-explorer/list-assistants/${engineId}?${params}`);
       const data = await response.json();
       setListAssistantsData(data);
     } catch (error) {
@@ -106,8 +168,9 @@ export default function ApiExplorer({ config }: ApiExplorerProps) {
       const params = new URLSearchParams({
         project_number: projectNumber,
         location: location,
+        use_adc_quota: String(useAdcQuota),
       });
-      const response = await fetch(`http://localhost:8000/api-explorer/list-agents/${engineId}?${params}`);
+      const response = await fetch(`${API_BASE_URL}/api-explorer/list-agents/${engineId}?${params}`);
       const data = await response.json();
       setListAgentsData(data);
     } catch (error) {
@@ -126,8 +189,9 @@ export default function ApiExplorer({ config }: ApiExplorerProps) {
       const params = new URLSearchParams({
         project_number: projectNumber,
         location: location,
+        use_adc_quota: String(useAdcQuota),
       });
-      const response = await fetch(`http://localhost:8000/api-explorer/get-agent/${engineId}/${agentId}?${params}`);
+      const response = await fetch(`${API_BASE_URL}/api-explorer/get-agent/${engineId}/${agentId}?${params}`);
       const data = await response.json();
       setGetAgentData(data);
     } catch (error) {
@@ -139,73 +203,6 @@ export default function ApiExplorer({ config }: ApiExplorerProps) {
     }
   };
 
-  const testStreamAssist = async () => {
-    if (!isConfigured) return;
-    setLoading('streamassist');
-    try {
-      const params = new URLSearchParams({
-        engine_id: engineId,
-        assistant_id: assistantId,
-        query: query,
-        project_number: projectNumber,
-        location: location,
-        agent_name: agentId,
-        session_id: sessionId,
-      });
-      const response = await fetch(
-        `http://localhost:8000/api-explorer/stream-assist?${params.toString()}`,
-        { method: 'POST' }
-      );
-      const data = await response.json();
-      setStreamAssistData(data);
-    } catch (error) {
-      setStreamAssistData({
-        error: { message: error instanceof Error ? error.message : 'Unknown error' },
-      });
-    } finally {
-      setLoading(null);
-    }
-  };
-
-  const testWebGroundingSearch = async () => {
-    if (!isConfigured) return;
-    setLoading('search');
-    try {
-      const params = new URLSearchParams({
-        engine_id: engineId,
-        assistant_id: assistantId,
-        query: searchQuery,
-        project_number: projectNumber,
-        location: location,
-      });
-      const response = await fetch(
-        `http://localhost:8000/api-explorer/web-grounding-search?${params.toString()}`,
-        { method: 'POST' }
-      );
-      const data = await response.json();
-      setSearchData(data);
-    } catch (error) {
-      setSearchData({
-        error: { message: error instanceof Error ? error.message : 'Unknown error' },
-      });
-    } finally {
-      setLoading(null);
-    }
-  };
-
-  const renderJson = (data: any, title: string) => {
-    if (!data) return null;
-
-    return (
-      <div className="mt-4 border border-gray-300 rounded-lg p-4">
-        <h3 className="font-semibold text-lg mb-2">{title}</h3>
-        <pre className="bg-gray-50 p-4 rounded overflow-x-auto text-sm">
-          {JSON.stringify(data, null, 2)}
-        </pre>
-      </div>
-    );
-  };
-
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">🔷 Gemini Enterprise Explorer</h1>
@@ -213,20 +210,13 @@ export default function ApiExplorer({ config }: ApiExplorerProps) {
         Explore Gemini Enterprise (Agentspace) API endpoints to understand assistants, agents, and their interactions.
       </p>
 
-      {!isConfigured && (
-        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-          <p className="text-amber-800 font-medium">⚠️ Configuration Required</p>
-          <p className="text-amber-700 text-sm mt-1">
-            Please configure your Project Number and Engine ID in the sidebar to use Gemini Enterprise Explorer.
-          </p>
-        </div>
-      )}
+      {!isConfigured && <ConfigWarning feature="the API Explorer" />}
 
       {/* Section 1: Get Engine Details */}
       <div className="mb-8 border-b pb-8">
         <h2 className="text-xl font-semibold mb-2">
           1. Get Engine Details
-          <span className="ml-3 text-sm font-normal px-2 py-1 bg-blue-100 text-blue-800 rounded">Python SDK v1</span>
+          <Badge variant="blue" className="ml-3">Python SDK v1</Badge>
         </h2>
         <div className="mb-3 px-3 py-2 bg-gray-50 rounded border border-gray-200">
           <code className="text-xs text-gray-700">EngineServiceClient().get_engine()</code>
@@ -252,22 +242,34 @@ export default function ApiExplorer({ config }: ApiExplorerProps) {
         </div>
 
         {engineDetailsData && (
-          <>
+          <div className="space-y-4">
             {engineDetailsData.success !== undefined && (
-              <div
-                className={`mb-4 p-3 rounded ${
-                  engineDetailsData.success
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-red-100 text-red-800'
-                }`}
-              >
-                {engineDetailsData.success ? '✓ Success' : '✗ Failed'}
+              <StatusBanner success={engineDetailsData.success} />
+            )}
+            {engineDetailsData.response && (
+              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg space-y-2 text-sm">
+                <div><span className="text-gray-500">Display Name:</span> {engineDetailsData.response.displayName ?? '—'}</div>
+                <div><span className="text-gray-500">Solution Type:</span> {engineDetailsData.response.solutionType ?? '—'}</div>
+                <div><span className="text-gray-500">Industry Vertical:</span> {engineDetailsData.response.industryVertical ?? '—'}</div>
+                <div><span className="text-gray-500">Create Time:</span> {engineDetailsData.response.createTime ?? '—'}</div>
+                {engineDetailsData.response.dataStoreIds && (
+                  <div>
+                    <span className="text-gray-500">Data Store IDs:</span>{' '}
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {(engineDetailsData.response.dataStoreIds as string[]).map((id, idx) => (
+                        <Badge key={idx} variant="gray">{id}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
-            {renderJson(engineDetailsData.request_params, 'Request Parameters')}
-            {renderJson(engineDetailsData.response, 'Response')}
-            {engineDetailsData.error && renderJson(engineDetailsData.error, 'Error')}
-          </>
+            <RawJsonView
+              data={{ request_params: engineDetailsData.request_params, response: engineDetailsData.response }}
+              label="View request/response JSON"
+            />
+            {Boolean(engineDetailsData.error) && <RawJsonView data={engineDetailsData.error} label="View error" />}
+          </div>
         )}
       </div>
 
@@ -275,7 +277,7 @@ export default function ApiExplorer({ config }: ApiExplorerProps) {
       <div className="mb-8 border-b pb-8">
         <h2 className="text-xl font-semibold mb-2">
           2. List Engine Data Stores
-          <span className="ml-3 text-sm font-normal px-2 py-1 bg-blue-100 text-blue-800 rounded">Python SDK v1</span>
+          <Badge variant="blue" className="ml-3">Python SDK v1</Badge>
         </h2>
         <div className="mb-3 px-3 py-2 bg-gray-50 rounded border border-gray-200">
           <code className="text-xs text-gray-700">DataStoreServiceClient().get_data_store()</code>
@@ -301,22 +303,34 @@ export default function ApiExplorer({ config }: ApiExplorerProps) {
         </div>
 
         {engineDataStoresData && (
-          <>
+          <div className="space-y-4">
             {engineDataStoresData.success !== undefined && (
-              <div
-                className={`mb-4 p-3 rounded ${
-                  engineDataStoresData.success
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-red-100 text-red-800'
-                }`}
-              >
-                {engineDataStoresData.success ? '✓ Success' : '✗ Failed'}
-              </div>
+              <StatusBanner success={engineDataStoresData.success} />
             )}
-            {renderJson(engineDataStoresData.request_params, 'Request Parameters')}
-            {renderJson(engineDataStoresData.response, 'Response')}
-            {engineDataStoresData.error && renderJson(engineDataStoresData.error, 'Error')}
-          </>
+            {engineDataStoresData.response && (
+              engineDataStoresData.response.data_store_count === 0 ? (
+                <EmptyState title="No data stores found for this engine." />
+              ) : (
+                <div className="space-y-2">
+                  {(engineDataStoresData.response.data_stores ?? []).map((ds: DataStoreSummary, idx: number) => (
+                    <div key={idx} className="p-3 bg-gray-50 border border-gray-200 rounded text-sm">
+                      <div className="font-medium">{ds.display_name ?? ds.id}</div>
+                      <div className="text-xs text-gray-500 font-mono">{ds.id}</div>
+                      <div className="text-xs text-gray-600 mt-1">
+                        {ds.industry_vertical && <span>Industry: {ds.industry_vertical} </span>}
+                        {ds.content_config && <span>Content Config: {ds.content_config}</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            )}
+            <RawJsonView
+              data={{ request_params: engineDataStoresData.request_params, response: engineDataStoresData.response }}
+              label="View request/response JSON"
+            />
+            {Boolean(engineDataStoresData.error) && <RawJsonView data={engineDataStoresData.error} label="View error" />}
+          </div>
         )}
       </div>
 
@@ -324,7 +338,7 @@ export default function ApiExplorer({ config }: ApiExplorerProps) {
       <div className="mb-8 border-b pb-8">
         <h2 className="text-xl font-semibold mb-2">
           3. List Assistants
-          <span className="ml-3 text-sm font-normal px-2 py-1 bg-purple-100 text-purple-800 rounded">REST API v1alpha</span>
+          <Badge variant="purple" className="ml-3">REST API v1alpha</Badge>
         </h2>
         <div className="mb-3 px-3 py-2 bg-gray-50 rounded border border-gray-200">
           <code className="text-xs text-gray-700">GET {getApiEndpoint()}/v1alpha/.../engines/{'{engine}'}/assistants</code>
@@ -350,22 +364,33 @@ export default function ApiExplorer({ config }: ApiExplorerProps) {
         </div>
 
         {listAssistantsData && (
-          <>
+          <div className="space-y-4">
             {listAssistantsData.success !== undefined && (
-              <div
-                className={`mb-4 p-3 rounded ${
-                  listAssistantsData.success
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-red-100 text-red-800'
-                }`}
-              >
-                {listAssistantsData.success ? '✓ Success' : '✗ Failed'}
-              </div>
+              <StatusBanner success={listAssistantsData.success} />
             )}
-            {renderJson(listAssistantsData.request_params, 'Request Parameters')}
-            {listAssistantsData.response && renderJson(listAssistantsData.response, 'Response')}
-            {listAssistantsData.error && renderJson(listAssistantsData.error, 'Error Details')}
-          </>
+            {listAssistantsData.response && (
+              listAssistantsData.response.assistant_count === 0 ? (
+                <EmptyState title="No assistants found for this engine." />
+              ) : (
+                <div className="space-y-2">
+                  {(listAssistantsData.response.assistants ?? []).map((assistant: AssistantSummary, idx: number) => {
+                    const shortId = assistant.name?.split('/').pop() ?? '';
+                    return (
+                      <div key={idx} className="p-3 bg-gray-50 border border-gray-200 rounded text-sm">
+                        <div className="font-medium">{assistant.displayName || shortId}</div>
+                        <div className="text-xs text-gray-500 font-mono">{shortId || assistant.name}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )
+            )}
+            <RawJsonView
+              data={{ request_params: listAssistantsData.request_params, response: listAssistantsData.response }}
+              label="View request/response JSON"
+            />
+            {Boolean(listAssistantsData.error) && <RawJsonView data={listAssistantsData.error} label="View error details" />}
+          </div>
         )}
       </div>
 
@@ -373,13 +398,13 @@ export default function ApiExplorer({ config }: ApiExplorerProps) {
       <div className="mb-8 border-b pb-8">
         <h2 className="text-xl font-semibold mb-2">
           4. List Agents
-          <span className="ml-3 text-sm font-normal px-2 py-1 bg-purple-100 text-purple-800 rounded">REST API v1alpha</span>
+          <Badge variant="purple" className="ml-3">REST API v1alpha</Badge>
         </h2>
         <div className="mb-3 px-3 py-2 bg-gray-50 rounded border border-gray-200">
           <code className="text-xs text-gray-700">GET {getApiEndpoint()}/v1alpha/.../assistants/{'{assistant}'}/agents</code>
         </div>
         <p className="text-gray-600 mb-4">
-          List all agents within the default assistant. Agents are individual tools/capabilities like "HKFinBot", "Deep Research", etc.
+          List all agents within the default assistant. Agents are individual tools/capabilities like &quot;HKFinBot&quot;, &quot;Deep Research&quot;, etc.
         </p>
         <div className="flex gap-2 mb-4">
           <input
@@ -399,22 +424,65 @@ export default function ApiExplorer({ config }: ApiExplorerProps) {
         </div>
 
         {listAgentsData && (
-          <>
+          <div className="space-y-4">
             {listAgentsData.success !== undefined && (
-              <div
-                className={`mb-4 p-3 rounded ${
-                  listAgentsData.success
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-red-100 text-red-800'
-                }`}
-              >
-                {listAgentsData.success ? '✓ Success' : '✗ Failed'}
-              </div>
+              <StatusBanner success={listAgentsData.success} />
             )}
-            {renderJson(listAgentsData.request_params, 'Request Parameters')}
-            {listAgentsData.response && renderJson(listAgentsData.response, 'Response')}
-            {listAgentsData.error && renderJson(listAgentsData.error, 'Error Details')}
-          </>
+            {listAgentsData.success && listAgentsData.response?.agents !== undefined && (() => {
+              // API Explorer surfaces raw debug responses (see ApiResponse.response: any);
+              // narrow to the documented Agent shape purely for this display block.
+              const agents = listAgentsData.response.agents as AgentSummary[];
+              return (
+                <div>
+                  {agents.length === 0 ? (
+                    <EmptyState
+                      title="No agents found under default_assistant."
+                      description="Agents must be explicitly created/deployed for this engine before they show up here."
+                    />
+                  ) : (
+                    <>
+                      <p className="text-sm text-gray-600 mb-2">
+                        Each agent&apos;s <code className="text-xs bg-gray-100 px-1 rounded">name</code> is a full resource path; the{' '}
+                        <strong>Agent Name</strong> field below (and the API) expects only the last path segment, extracted here:
+                      </p>
+                      <div className="space-y-2">
+                        {agents.map((agent, idx) => {
+                          const shortId = agent.name?.split('/').pop() ?? '';
+                          return (
+                            <div
+                              key={idx}
+                              className="flex items-center justify-between gap-3 p-3 bg-gray-50 border border-gray-200 rounded"
+                            >
+                              <div className="min-w-0">
+                                <div className="font-medium text-sm truncate">
+                                  {agent.displayName || shortId}
+                                </div>
+                                <div className="text-xs text-gray-500 font-mono truncate">
+                                  agent_name: {shortId || '(missing name field)'}
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => setAgentId(shortId)}
+                                disabled={!shortId}
+                                className="shrink-0 px-3 py-1.5 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 disabled:bg-gray-400"
+                              >
+                                Use for Get Agent Details →
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })()}
+            <RawJsonView
+              data={{ request_params: listAgentsData.request_params, response: listAgentsData.response }}
+              label="View request/response JSON"
+            />
+            {Boolean(listAgentsData.error) && <RawJsonView data={listAgentsData.error} label="View error details" />}
+          </div>
         )}
       </div>
 
@@ -422,13 +490,13 @@ export default function ApiExplorer({ config }: ApiExplorerProps) {
       <div className="mb-8 border-b pb-8">
         <h2 className="text-xl font-semibold mb-2">
           5. Get Agent Details
-          <span className="ml-3 text-sm font-normal px-2 py-1 bg-purple-100 text-purple-800 rounded">REST API v1alpha</span>
+          <Badge variant="purple" className="ml-3">REST API v1alpha</Badge>
         </h2>
         <div className="mb-3 px-3 py-2 bg-gray-50 rounded border border-gray-200">
           <code className="text-xs text-gray-700">GET {getApiEndpoint()}/v1alpha/.../agents/{'{agent}'}</code>
         </div>
         <p className="text-gray-600 mb-4">
-          Get detailed information about a specific agent (e.g., "default_idea_generation", "deep_research"). Use agent names from the List Agents response.
+          Get detailed information about a specific agent (e.g., &quot;default_idea_generation&quot;, &quot;deep_research&quot;). Use agent names from the List Agents response.
         </p>
         <div className="flex gap-2 mb-4">
           <input
@@ -455,172 +523,38 @@ export default function ApiExplorer({ config }: ApiExplorerProps) {
         </div>
 
         {getAgentData && (
-          <>
+          <div className="space-y-4">
             {getAgentData.success !== undefined && (
-              <div
-                className={`mb-4 p-3 rounded ${
-                  getAgentData.success
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-red-100 text-red-800'
-                }`}
-              >
-                {getAgentData.success ? '✓ Success' : '✗ Failed'}
-              </div>
+              <StatusBanner success={getAgentData.success} />
             )}
-            {renderJson(getAgentData.request_params, 'Request Parameters')}
-            {getAgentData.response && renderJson(getAgentData.response, 'Response')}
-            {getAgentData.error && renderJson(getAgentData.error, 'Error Details')}
-          </>
-        )}
-      </div>
-
-      {/* Section 6: Stream Assist */}
-      <div className="mb-8 border-b pb-8">
-        <h2 className="text-xl font-semibold mb-2">
-          6. Query Assistant (StreamAssist)
-          <span className="ml-3 text-sm font-normal px-2 py-1 bg-purple-100 text-purple-800 rounded">REST API v1alpha</span>
-        </h2>
-        <div className="mb-3 px-3 py-2 bg-gray-50 rounded border border-gray-200">
-          <code className="text-xs text-gray-700">POST {getApiEndpoint()}/v1alpha/.../assistants/{'{assistant}'}:streamAssist</code>
-        </div>
-        <p className="text-gray-600 mb-4">
-          Query an assistant/agent using the streamAssist API (v1alpha with us location). Optionally specify an agent name to route to a specific agent. The response includes session info for conversation continuity.
-        </p>
-        <div className="space-y-2 mb-4">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={engineId}
-              readOnly
-              placeholder="Engine ID"
-              className="flex-1 px-4 py-2 border border-gray-300 rounded bg-gray-50"
+            {getAgentData.response && (() => {
+              const response = getAgentData.response!;
+              const state: string | undefined = response.state;
+              const definitionKey = AGENT_DEFINITION_KEYS.find((key) => response[key] !== undefined);
+              return (
+                <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg space-y-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{response.displayName ?? '(no display name)'}</span>
+                    {state && (
+                      <Badge variant={AGENT_STATE_BADGE_VARIANT[state] ?? 'gray'}>{state}</Badge>
+                    )}
+                  </div>
+                  {response.description && (
+                    <div className="text-gray-600">{response.description}</div>
+                  )}
+                  <div>
+                    <span className="text-gray-500">Definition Type:</span>{' '}
+                    {definitionKey ? <Badge variant="teal">{definitionKey}</Badge> : '—'}
+                  </div>
+                </div>
+              );
+            })()}
+            <RawJsonView
+              data={{ request_params: getAgentData.request_params, response: getAgentData.response }}
+              label="View request/response JSON"
             />
-            <input
-              type="text"
-              value={assistantId}
-              readOnly
-              placeholder="Assistant ID"
-              className="flex-1 px-4 py-2 border border-gray-300 rounded bg-gray-50"
-            />
+            {Boolean(getAgentData.error) && <RawJsonView data={getAgentData.error} label="View error details" />}
           </div>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Query"
-              className="flex-1 px-4 py-2 border border-gray-300 rounded"
-            />
-          </div>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={agentId}
-              onChange={(e) => setAgentId(e.target.value)}
-              placeholder="Agent Name (optional, e.g., default_idea_generation)"
-              className="flex-1 px-4 py-2 border border-gray-300 rounded"
-            />
-            <input
-              type="text"
-              value={sessionId}
-              onChange={(e) => setSessionId(e.target.value)}
-              placeholder="Session ID (default: -)"
-              className="w-48 px-4 py-2 border border-gray-300 rounded"
-            />
-            <button
-              onClick={testStreamAssist}
-              disabled={loading === 'streamassist' || !isConfigured}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400"
-            >
-              {loading === 'streamassist' ? 'Testing...' : 'Stream Assist'}
-            </button>
-          </div>
-        </div>
-
-        {streamAssistData && (
-          <>
-            {streamAssistData.success !== undefined && (
-              <div
-                className={`mb-4 p-3 rounded ${
-                  streamAssistData.success
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-red-100 text-red-800'
-                }`}
-              >
-                {streamAssistData.success ? '✓ Success' : '✗ Failed'}
-              </div>
-            )}
-            {renderJson(streamAssistData.request_params, 'Request Parameters')}
-            {streamAssistData.response && renderJson(streamAssistData.response, 'Response')}
-            {streamAssistData.error && renderJson(streamAssistData.error, 'Error Details')}
-          </>
-        )}
-      </div>
-
-      {/* Section 7: Web Grounding Search */}
-      <div className="mb-8 border-b pb-8">
-        <h2 className="text-xl font-semibold mb-2">
-          7. Web Grounding Search
-          <span className="ml-3 text-sm font-normal px-2 py-1 bg-purple-100 text-purple-800 rounded">REST API v1alpha</span>
-        </h2>
-        <div className="mb-3 px-3 py-2 bg-gray-50 rounded border border-gray-200">
-          <code className="text-xs text-gray-700">POST {getApiEndpoint()}/v1alpha/.../assistants/{'{assistant}'}:streamAssist (webGroundingSpec)</code>
-        </div>
-        <p className="text-gray-600 mb-4">
-          Search the web using streamAssist with web grounding enabled. This uses Google Search to find and synthesize information from the web.
-        </p>
-        <div className="space-y-2 mb-4">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={engineId}
-              readOnly
-              placeholder="Engine ID"
-              className="flex-1 px-4 py-2 border border-gray-300 rounded bg-gray-50"
-            />
-            <input
-              type="text"
-              value={assistantId}
-              readOnly
-              placeholder="Assistant ID"
-              className="flex-1 px-4 py-2 border border-gray-300 rounded bg-gray-50"
-            />
-          </div>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search Query"
-              className="flex-1 px-4 py-2 border border-gray-300 rounded"
-            />
-            <button
-              onClick={testWebGroundingSearch}
-              disabled={loading === 'search' || !isConfigured}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400"
-            >
-              {loading === 'search' ? 'Searching...' : 'Search Web'}
-            </button>
-          </div>
-        </div>
-
-        {searchData && (
-          <>
-            {searchData.success !== undefined && (
-              <div
-                className={`mb-4 p-3 rounded ${
-                  searchData.success
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-red-100 text-red-800'
-                }`}
-              >
-                {searchData.success ? '✓ Success' : '✗ Failed'}
-              </div>
-            )}
-            {renderJson(searchData.request_params, 'Request Parameters')}
-            {searchData.response && renderJson(searchData.response, 'Response')}
-            {searchData.error && renderJson(searchData.error, 'Error Details')}
-          </>
         )}
       </div>
 
@@ -630,9 +564,9 @@ export default function ApiExplorer({ config }: ApiExplorerProps) {
         <div className="text-sm text-gray-700 space-y-2">
           <p><strong>Engine</strong> → Contains → <strong>Assistants</strong> → Contains → <strong>Agents</strong></p>
           <ul className="list-disc list-inside ml-4 space-y-1">
-            <li><strong>Engine:</strong> Top-level resource (e.g., "my-engine")</li>
-            <li><strong>Assistant:</strong> Container for agents (e.g., "default_assistant")</li>
-            <li><strong>Agent:</strong> Individual AI tool/capability (e.g., "HKFinBot", "Deep Research")</li>
+            <li><strong>Engine:</strong> Top-level resource (e.g., &quot;my-engine&quot;)</li>
+            <li><strong>Assistant:</strong> Container for agents (e.g., &quot;default_assistant&quot;)</li>
+            <li><strong>Agent:</strong> Individual AI tool/capability (e.g., &quot;HKFinBot&quot;, &quot;Deep Research&quot;)</li>
           </ul>
         </div>
       </div>

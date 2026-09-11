@@ -13,7 +13,13 @@ from backend import config
 class SearchClient:
     """Client for performing enterprise search queries."""
 
-    def __init__(self, project_number: str, location: str, engine_id: str):
+    def __init__(
+        self,
+        project_number: str,
+        location: str,
+        engine_id: str,
+        use_adc_quota: bool = False,
+    ):
         """
         Initialize the search client.
 
@@ -21,6 +27,7 @@ class SearchClient:
             project_number: Google Cloud project number
             location: Engine location (us, eu, global)
             engine_id: Engine/datastore ID
+            use_adc_quota: Use ADC's ambient quota project instead of project_number
         """
         self.project_number = project_number
         self.location = location
@@ -41,7 +48,10 @@ class SearchClient:
             if location == "global"
             else f"{location}-discoveryengine.googleapis.com"
         )
-        client_options = ClientOptions(api_endpoint=api_endpoint)
+        client_options = ClientOptions(
+            api_endpoint=api_endpoint,
+            **({} if use_adc_quota else {"quota_project_id": project_number}),
+        )
         self.client = discoveryengine.SearchServiceClient(client_options=client_options)
 
     def search(

@@ -17,6 +17,9 @@ class SearchRequest(BaseModel):
     project_number: str = Field(..., description="Google Cloud project number")
     location: str = Field("us", description="Engine location (us, eu, global)")
     engine_id: str = Field(..., description="Engine/datastore ID")
+    use_adc_quota: bool = Field(
+        False, description="Use ADC's ambient quota project instead of project_number"
+    )
 
 
 class SearchResult(BaseModel):
@@ -48,6 +51,39 @@ class ConversationRequest(BaseModel):
     project_number: str = Field(..., description="Google Cloud project number")
     location: str = Field("us", description="Engine location (us, eu, global)")
     engine_id: str = Field(..., description="Engine/datastore ID")
+    use_adc_quota: bool = Field(
+        False, description="Use ADC's ambient quota project instead of project_number"
+    )
+
+
+class DeepResearchPlanRequest(BaseModel):
+    """Request model for the deep research plan endpoint."""
+
+    query: str = Field(..., description="The user's research query")
+    project_number: str = Field(..., description="Google Cloud project number")
+    location: str = Field("us", description="Engine location (us, eu, global)")
+    engine_id: str = Field(..., description="Engine/datastore ID")
+    assistant_id: str = Field("default_assistant", description="The ID of the assistant")
+    agent_name: str = Field("deep_research", description="The deep research agent ID")
+    use_adc_quota: bool = Field(
+        False, description="Use ADC's ambient quota project instead of project_number"
+    )
+
+
+class DeepResearchRunRequest(BaseModel):
+    """Request model for the deep research run endpoint."""
+
+    session_id: str = Field(
+        ..., description="Session ID returned from a prior /deep-research/plan call"
+    )
+    project_number: str = Field(..., description="Google Cloud project number")
+    location: str = Field("us", description="Engine location (us, eu, global)")
+    engine_id: str = Field(..., description="Engine/datastore ID")
+    assistant_id: str = Field("default_assistant", description="The ID of the assistant")
+    agent_name: str = Field("deep_research", description="The deep research agent ID")
+    use_adc_quota: bool = Field(
+        False, description="Use ADC's ambient quota project instead of project_number"
+    )
 
 
 class ConversationResponse(BaseModel):

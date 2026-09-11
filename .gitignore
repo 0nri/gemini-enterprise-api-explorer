@@ -6,6 +6,8 @@ __pycache__/
 .Python
 backend/.venv/
 backend/venv/
+.venv/
+venv/
 env/
 ENV/
 *.egg-info/
@@ -57,3 +59,22 @@ build/
 *.tmp
 *.temp
 .cache/
+
+# AI assistant / agent tooling (local-only, not part of the shipped repo)
+.claude/
+.cursor/
+.windsurf/
+.continue/
+.cline/
+.clinerules/
+.aider*
+.copilot/
+CLAUDE.md
+CLAUDE.local.md
+
+# OpenSpec planning artifacts (local-only, not part of the shipped repo)
+openspec/
+
+# Next.js build artifacts
+frontend/next-env.d.ts
+frontend/*.tsbuildinfo

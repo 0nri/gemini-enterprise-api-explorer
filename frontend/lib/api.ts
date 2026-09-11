@@ -106,10 +106,18 @@ export interface SourceSettings {
   status: string;
 }
 
+/** Metadata associated with a notebook content source. */
+export interface SourceMetadata {
+  wordCount?: number;
+  tokenCount?: number;
+  [key: string]: unknown;
+}
+
+/** Information about a document or content source attached to a notebook. */
 export interface SourceInfo {
   source_id: SourceId;
   title: string;
-  metadata?: Record<string, string | number | boolean | null | undefined>;
+  metadata?: SourceMetadata;
   settings: SourceSettings;
   name: string;
 }

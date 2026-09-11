@@ -12,6 +12,7 @@ const nextConfig: NextConfig = {
       { source: "/agents/:path*", destination: `${BACKEND_URL}/agents/:path*` },
       { source: "/search/:path*", destination: `${BACKEND_URL}/search/:path*` },
       { source: "/conversations/:path*", destination: `${BACKEND_URL}/conversations/:path*` },
+      // Proxy NotebookLM Enterprise API routes to the FastAPI backend
       { source: "/notebooks/:path*", destination: `${BACKEND_URL}/notebooks/:path*` },
     ];
   },

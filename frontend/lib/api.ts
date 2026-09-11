@@ -109,7 +109,7 @@ export interface SourceSettings {
 export interface SourceInfo {
   source_id: SourceId;
   title: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, string | number | boolean | null | undefined>;
   settings: SourceSettings;
   name: string;
 }
